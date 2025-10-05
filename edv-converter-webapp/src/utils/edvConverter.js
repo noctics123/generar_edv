@@ -58,28 +58,40 @@ class EDVConverter {
      * Agrega widgets EDV al script
      */
     addEDVWidgets(script) {
-        // Buscar la sección de widgets
-        const widgetPattern = /(dbutils\.widgets\.text\([^)]+\)\s*)+/;
-
-        const edvWidgets = `dbutils.widgets.text(name="PRM_CATALOG_NAME_EDV", defaultValue='catalog_lhcl_prod_bcp_expl')
-dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_012')
-`;
-
         // Verificar si ya existen
         if (script.includes('PRM_CATALOG_NAME_EDV')) {
             this.warnings.push('Los widgets EDV ya existen en el script');
             return script;
         }
 
-        // Buscar el último widget para insertar después
-        const lastWidgetMatch = script.match(/dbutils\.widgets\.text\([^)]+\)(?:\s*\n)+(?!dbutils\.widgets)/);
+        const edvWidgets = `dbutils.widgets.text(name="PRM_CATALOG_NAME_EDV", defaultValue='catalog_lhcl_prod_bcp_expl')
+dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_012')
+`;
 
-        if (lastWidgetMatch) {
-            const insertPos = lastWidgetMatch.index + lastWidgetMatch[0].length;
+        // Buscar PRM_TABLA_PARAM_GRUPO (último widget común) para insertar después
+        const lastWidgetPattern = /dbutils\.widgets\.text\(name="PRM_TABLA_PARAM_GRUPO"[^\n]+\n/;
+        const match = script.match(lastWidgetPattern);
+
+        if (match) {
+            const insertPos = match.index + match[0].length;
             script = script.slice(0, insertPos) + edvWidgets + script.slice(insertPos);
-            this.conversionLog.push('✅ Widgets EDV agregados');
+            this.conversionLog.push('✅ Widgets EDV agregados después de PRM_TABLA_PARAM_GRUPO');
         } else {
-            this.warnings.push('⚠️  No se encontró sección de widgets. Agregar manualmente al inicio.');
+            // Buscar cualquier último widget como fallback
+            const fallbackPattern = /(dbutils\.widgets\.text\([^)]+\)\s*\n)+/g;
+            let lastMatch = null;
+            let match2;
+            while ((match2 = fallbackPattern.exec(script)) !== null) {
+                lastMatch = match2;
+            }
+
+            if (lastMatch) {
+                const insertPos = lastMatch.index + lastMatch[0].length;
+                script = script.slice(0, insertPos) + '\n' + edvWidgets + script.slice(insertPos);
+                this.conversionLog.push('✅ Widgets EDV agregados al final de sección de widgets');
+            } else {
+                this.warnings.push('⚠️  No se encontró sección de widgets. Agregar manualmente.');
+            }
         }
 
         return script;
@@ -89,26 +101,42 @@ dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_
      * Agrega variables EDV después de los gets de widgets
      */
     addEDVVariables(script) {
-        const edvVarsCode = `
-PRM_CATALOG_NAME_EDV = dbutils.widgets.get("PRM_CATALOG_NAME_EDV")
-PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
-`;
-
         // Verificar si ya existen
         if (script.includes('PRM_CATALOG_NAME_EDV = dbutils.widgets.get')) {
             this.warnings.push('Las variables EDV ya existen');
             return script;
         }
 
-        // Buscar el último get de widget
-        const lastGetMatch = script.match(/(.*dbutils\.widgets\.get\([^)]+\).*\n)+/);
+        const edvVarsCode = `PRM_CATALOG_NAME_EDV = dbutils.widgets.get("PRM_CATALOG_NAME_EDV")
+PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
+`;
 
-        if (lastGetMatch) {
-            const insertPos = lastGetMatch.index + lastGetMatch[0].length;
+        // Buscar PRM_TABLA_PARAM_GRUPO get (último común)
+        const lastGetPattern = /PRM_TABLA_PARAM_GRUPO\s*=\s*dbutils\.widgets\.get\("PRM_TABLA_PARAM_GRUPO"\)\s*\n/;
+        const match = script.match(lastGetPattern);
+
+        if (match) {
+            const insertPos = match.index + match[0].length;
             script = script.slice(0, insertPos) + edvVarsCode + script.slice(insertPos);
-            this.conversionLog.push('✅ Variables EDV agregadas');
+            this.conversionLog.push('✅ Variables EDV agregadas después de PRM_TABLA_PARAM_GRUPO');
         } else {
-            this.warnings.push('⚠️  No se encontró sección de gets. Agregar variables EDV manualmente.');
+            // Buscar último get como fallback
+            const lines = script.split('\n');
+            let lastGetIndex = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('= dbutils.widgets.get(')) {
+                    lastGetIndex = i;
+                }
+            }
+
+            if (lastGetIndex >= 0) {
+                lines.splice(lastGetIndex + 1, 0, edvVarsCode);
+                script = lines.join('\n');
+                this.conversionLog.push('✅ Variables EDV agregadas');
+            } else {
+                this.warnings.push('⚠️  No se encontró sección de gets. Agregar variables EDV manualmente.');
+            }
         }
 
         return script;
@@ -118,32 +146,36 @@ PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
      * Actualiza la definición de VAL_DESTINO_NAME para usar esquema EDV
      */
     updateDestinationName(script) {
-        // Buscar y agregar PRM_ESQUEMA_TABLA_ESCRITURA antes de VAL_DESTINO_NAME
-        const escrituraVar = '\nPRM_ESQUEMA_TABLA_ESCRITURA = PRM_CATALOG_NAME_EDV + "." + PRM_ESQUEMA_TABLA_EDV\n';
+        // Verificar si ya usa PRM_ESQUEMA_TABLA_ESCRITURA
+        if (script.includes('PRM_ESQUEMA_TABLA_ESCRITURA')) {
+            this.warnings.push('PRM_ESQUEMA_TABLA_ESCRITURA ya existe');
+            return script;
+        }
 
-        // Buscar VAL_DESTINO_NAME
-        const valDestinoPattern = /VAL_DESTINO_NAME\s*=\s*.+/;
-        const match = script.match(valDestinoPattern);
+        // Buscar línea de PRM_CARPETA_RAIZ_DE_PROYECTO o PRM_ESQUEMA_TABLA para insertar después
+        const schemaPattern = /PRM_ESQUEMA_TABLA\s*=\s*PRM_CATALOG_NAME\s*\+\s*"\.".*\n/;
+        const match = script.match(schemaPattern);
 
         if (match) {
-            // Verificar si ya usa PRM_ESQUEMA_TABLA_ESCRITURA
-            if (match[0].includes('PRM_ESQUEMA_TABLA_ESCRITURA')) {
-                this.warnings.push('VAL_DESTINO_NAME ya usa PRM_ESQUEMA_TABLA_ESCRITURA');
-                return script;
-            }
+            const insertPos = match.index + match[0].length;
 
-            // Insertar PRM_ESQUEMA_TABLA_ESCRITURA antes de VAL_DESTINO_NAME
-            script = script.replace(valDestinoPattern, escrituraVar + match[0]);
+            // Código a insertar
+            const edvSchemaCode = `PRM_ESQUEMA_TABLA_ESCRITURA = PRM_CATALOG_NAME_EDV + "." + PRM_ESQUEMA_TABLA_EDV
+`;
 
-            // Actualizar VAL_DESTINO_NAME para usar esquema de escritura
+            // Insertar después de PRM_ESQUEMA_TABLA
+            script = script.slice(0, insertPos) + edvSchemaCode + script.slice(insertPos);
+
+            // Actualizar VAL_DESTINO_NAME
             script = script.replace(
-                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(.+)/,
-                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1'
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\.".*PRM_TABLE_NAME/,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME'
             );
 
-            this.conversionLog.push('✅ VAL_DESTINO_NAME actualizado para usar esquema EDV');
+            this.conversionLog.push('✅ PRM_ESQUEMA_TABLA_ESCRITURA agregado');
+            this.conversionLog.push('✅ VAL_DESTINO_NAME actualizado para EDV');
         } else {
-            this.warnings.push('⚠️  No se encontró VAL_DESTINO_NAME. Verificar manualmente.');
+            this.warnings.push('⚠️  No se encontró PRM_ESQUEMA_TABLA. Verificar manualmente.');
         }
 
         return script;
@@ -294,19 +326,24 @@ spark.conf.set("spark.databricks.delta.autoCompact.enabled", "true")
      * Actualiza esquema DDV para usar views (sufijo _v)
      */
     updateDDVSchemaToViews(script) {
-        // Buscar PRM_ESQUEMA_TABLA_DDV y agregar _v si no lo tiene
-        const schemaPattern = /PRM_ESQUEMA_TABLA_DDV["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
+        // Buscar PRM_ESQUEMA_TABLA_DDV widget y agregar _v si no lo tiene
+        const schemaPattern = /dbutils\.widgets\.text\(name="PRM_ESQUEMA_TABLA_DDV",\s*defaultValue='([^']+)'\)/;
         const match = script.match(schemaPattern);
 
         if (match) {
             const currentSchema = match[1];
             if (!currentSchema.endsWith('_v')) {
                 const newSchema = currentSchema + '_v';
-                script = script.replace(currentSchema, newSchema);
-                this.conversionLog.push(`✅ Schema DDV actualizado para usar views: ${newSchema}`);
+                script = script.replace(
+                    `defaultValue='${currentSchema}'`,
+                    `defaultValue='${newSchema}'`
+                );
+                this.conversionLog.push(`✅ Schema DDV actualizado a views: ${currentSchema} → ${newSchema}`);
             } else {
                 this.warnings.push('Schema DDV ya usa sufijo _v (views)');
             }
+        } else {
+            this.warnings.push('⚠️  No se encontró PRM_ESQUEMA_TABLA_DDV widget');
         }
 
         return script;
