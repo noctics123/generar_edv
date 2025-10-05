@@ -17,6 +17,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Prism.js for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
 <body>
     <!-- Header -->
@@ -91,7 +94,10 @@
                         <span>Script DDV (entrada)</span>
                         <button class="btn btn-sm" id="clear-input">🗑️ Limpiar</button>
                     </div>
-                    <textarea id="input-script" class="code-editor" placeholder="Pega tu script DDV aquí o carga un archivo..."></textarea>
+                    <div class="code-editor-wrapper">
+                        <textarea id="input-script" class="code-editor" placeholder="Pega tu script DDV aquí o carga un archivo..." spellcheck="false"></textarea>
+                        <pre id="input-highlight" class="code-highlight"><code class="language-python"></code></pre>
+                    </div>
                     <div class="editor-footer">
                         <span id="input-lines">0 líneas</span>
                         <span id="input-size">0 KB</span>
@@ -220,7 +226,10 @@
                                 <button class="btn btn-sm btn-secondary" id="download-txt">📄 Descargar .txt</button>
                             </div>
                         </div>
-                        <textarea id="output-script" class="code-editor" readonly></textarea>
+                        <div class="code-editor-wrapper">
+                            <textarea id="output-script" class="code-editor" readonly spellcheck="false"></textarea>
+                            <pre id="output-highlight" class="code-highlight"><code class="language-python"></code></pre>
+                        </div>
                         <div class="editor-footer">
                             <span id="output-lines">0 líneas</span>
                             <span id="output-size">0 KB</span>
@@ -330,6 +339,10 @@
             <p>© 2025 BCP Analytics | Generado con Claude Code | <a href="https://github.com/noctics123/generar_edv">GitHub</a></p>
         </div>
     </footer>
+
+    <!-- Prism.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 
     <!-- Scripts -->
     <script src="edv-converter-webapp/src/utils/edvConverter.js"></script>

@@ -13,6 +13,7 @@ let editableParams = {};
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
+    initializeSyntaxHighlighting();
     console.log('✅ EDV Converter initialized');
 });
 
@@ -245,6 +246,9 @@ function updateConversionResults() {
     // Update output editor
     document.getElementById('output-script').value = currentOutputScript;
     updateOutputStats();
+
+    // Update syntax highlighting for output
+    updateOutputHighlight();
 
     // Update log tab
     updateLogTab();
@@ -735,6 +739,9 @@ function regenerateEDV() {
     document.getElementById('output-script').value = newScript;
     updateOutputStats();
 
+    // Update syntax highlighting
+    updateOutputHighlight();
+
     // Re-validate
     const validator = new EDVValidatorRiguroso();
     validationResult = validator.validate(currentOutputScript);
@@ -774,6 +781,58 @@ document.addEventListener('keydown', (e) => {
 
 console.log('🚀 EDV Converter v1.0.0');
 console.log('📚 Atajos: Ctrl+Enter (convertir), Ctrl+S (descargar)');
+
+// ===== SYNTAX HIGHLIGHTING =====
+
+function initializeSyntaxHighlighting() {
+    // Input editor
+    const inputTextarea = document.getElementById('input-script');
+    const inputHighlight = document.getElementById('input-highlight').querySelector('code');
+
+    // Output editor
+    const outputTextarea = document.getElementById('output-script');
+    const outputHighlight = document.getElementById('output-highlight').querySelector('code');
+
+    // Función para actualizar highlight
+    function updateHighlight(textarea, highlightCode) {
+        const code = textarea.value;
+        highlightCode.textContent = code;
+        Prism.highlightElement(highlightCode);
+    }
+
+    // Función para sincronizar scroll
+    function syncScroll(from, to) {
+        to.scrollTop = from.scrollTop;
+        to.scrollLeft = from.scrollLeft;
+    }
+
+    // Event listeners para input
+    inputTextarea.addEventListener('input', () => updateHighlight(inputTextarea, inputHighlight));
+    inputTextarea.addEventListener('scroll', () => {
+        const pre = document.getElementById('input-highlight');
+        syncScroll(inputTextarea, pre);
+    });
+
+    // Event listeners para output
+    outputTextarea.addEventListener('scroll', () => {
+        const pre = document.getElementById('output-highlight');
+        syncScroll(outputTextarea, pre);
+    });
+
+    // Actualizar highlight inicial si hay contenido
+    if (inputTextarea.value) {
+        updateHighlight(inputTextarea, inputHighlight);
+    }
+}
+
+// Función helper para actualizar output highlight desde otras funciones
+function updateOutputHighlight() {
+    const outputTextarea = document.getElementById('output-script');
+    const outputHighlight = document.getElementById('output-highlight').querySelector('code');
+
+    outputHighlight.textContent = outputTextarea.value;
+    Prism.highlightElement(outputHighlight);
+}
 
 // ===== MULTI-PERIODO =====
 
