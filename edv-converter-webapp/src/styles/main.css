@@ -759,10 +759,17 @@ body {
     width: 100%;
     height: 100%;
     z-index: 2;
-    background: transparent;
-    color: transparent;
-    caret-color: #abb2bf;
+    background: transparent !important;
+    color: transparent !important;
+    caret-color: #61afef !important;
     resize: none;
+    padding: 1rem;
+    line-height: 1.6;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    border: none;
+    outline: none;
+    -webkit-text-fill-color: transparent;
 }
 
 .code-editor-wrapper .code-highlight {
@@ -775,13 +782,14 @@ body {
     margin: 0;
     padding: 1rem;
     overflow: auto;
-    background: #1e1e1e;
+    background: #1e1e1e !important;
     border-radius: 6px;
     font-family: var(--font-mono);
     font-size: 0.9rem;
     line-height: 1.6;
     white-space: pre;
     pointer-events: none;
+    box-sizing: border-box;
 }
 
 .code-editor-wrapper .code-highlight code {
@@ -836,4 +844,15 @@ body {
 
 .code-highlight .token.operator {
     color: #56b6c2 !important;
+}
+
+/* Override old code-editor styles for syntax highlighting */
+.code-editor-wrapper .code-editor {
+    border: none !important;
+    background: transparent !important;
+}
+
+.code-editor-wrapper .code-editor:focus {
+    border: none !important;
+    box-shadow: none !important;
 }
