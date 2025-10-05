@@ -8,6 +8,7 @@ let currentInputScript = '';
 let currentOutputScript = '';
 let conversionResult = null;
 let validationResult = null;
+let editableParams = {};
 
 // Initialize application
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,6 +49,15 @@ function initializeEventListeners() {
 
     // Download output
     document.getElementById('download-output').addEventListener('click', downloadOutput);
+
+    // Download .txt
+    document.getElementById('download-txt').addEventListener('click', downloadTxt);
+
+    // Regenerate EDV
+    document.getElementById('regenerate-edv').addEventListener('click', regenerateEDV);
+
+    // Reset params
+    document.getElementById('reset-params').addEventListener('click', resetParams);
 }
 
 // ===== FILE HANDLING =====
@@ -204,6 +214,12 @@ function updateConversionResults() {
 
     // Update log tab
     updateLogTab();
+
+    // Update params table
+    updateParamsTable();
+
+    // Update managed tables info
+    updateManagedTablesInfo();
 }
 
 function updateValidationResults() {
@@ -382,6 +398,233 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ===== PARAMS TABLE =====
+function updateParamsTable() {
+    const tbody = document.getElementById('params-table-body');
+
+    if (!conversionResult) {
+        tbody.innerHTML = '<tr><td colspan="4">No hay parámetros para mostrar</td></tr>';
+        return;
+    }
+
+    const params = extractParamsFromScripts(currentInputScript, currentOutputScript);
+    editableParams = { ...params.edv }; // Store for editing
+
+    const rows = [];
+
+    // Row 1: Container
+    rows.push(`
+        <tr>
+            <td class="param-name">CONS_CONTAINER_NAME</td>
+            <td class="param-value">${escapeHtml(params.ddv.container || '-')}</td>
+            <td class="param-value">${escapeHtml(params.edv.container || '-')}</td>
+            <td>-</td>
+        </tr>
+    `);
+
+    // Row 2: Storage Account
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_STORAGE_ACCOUNT_DDV</td>
+            <td class="param-value">${escapeHtml(params.ddv.storageAccount || '-')}</td>
+            <td class="param-value">${escapeHtml(params.edv.storageAccount || '-')}</td>
+            <td>-</td>
+        </tr>
+    `);
+
+    // Row 3: Catalog DDV
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_CATALOG_NAME</td>
+            <td class="param-value">${escapeHtml(params.ddv.catalogDDV || '-')}</td>
+            <td class="param-value">${escapeHtml(params.edv.catalogDDV || '-')}</td>
+            <td>-</td>
+        </tr>
+    `);
+
+    // Row 4: Catalog EDV
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_CATALOG_NAME_EDV</td>
+            <td class="param-value">-</td>
+            <td><input type="text" id="edit-catalog-edv" value="${escapeHtml(params.edv.catalogEDV || '')}" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 5: Schema DDV
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_ESQUEMA_TABLA_DDV</td>
+            <td class="param-value">${escapeHtml(params.ddv.schemaDDV || '-')}</td>
+            <td class="param-value">${escapeHtml(params.edv.schemaDDV || '-')}</td>
+            <td>-</td>
+        </tr>
+    `);
+
+    // Row 6: Schema EDV
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_ESQUEMA_TABLA_EDV</td>
+            <td class="param-value">-</td>
+            <td><input type="text" id="edit-schema-edv" value="${escapeHtml(params.edv.schemaEDV || '')}" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 7: Table Name
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_TABLE_NAME</td>
+            <td class="param-value">${escapeHtml(params.ddv.tableName || '-')}</td>
+            <td><input type="text" id="edit-table-name" value="${escapeHtml(params.edv.tableName || '')}" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    tbody.innerHTML = rows.join('');
+}
+
+function extractParamsFromScripts(ddvScript, edvScript) {
+    const extractParam = (script, param) => {
+        const pattern = new RegExp(`${param}.*?defaultValue\\s*=\\s*['"]([^'"]+)['"]`);
+        const match = script.match(pattern);
+        return match ? match[1] : null;
+    };
+
+    const extractConst = (script, constName) => {
+        const pattern = new RegExp(`${constName}\\s*=\\s*['"]([^'"]+)['"]`);
+        const match = script.match(pattern);
+        return match ? match[1] : null;
+    };
+
+    return {
+        ddv: {
+            container: extractConst(ddvScript, 'CONS_CONTAINER_NAME'),
+            storageAccount: extractParam(ddvScript, 'PRM_STORAGE_ACCOUNT_DDV'),
+            catalogDDV: extractParam(ddvScript, 'PRM_CATALOG_NAME'),
+            schemaDDV: extractParam(ddvScript, 'PRM_ESQUEMA_TABLA_DDV'),
+            tableName: extractParam(ddvScript, 'PRM_TABLE_NAME')
+        },
+        edv: {
+            container: extractConst(edvScript, 'CONS_CONTAINER_NAME'),
+            storageAccount: extractParam(edvScript, 'PRM_STORAGE_ACCOUNT_DDV'),
+            catalogDDV: extractParam(edvScript, 'PRM_CATALOG_NAME'),
+            catalogEDV: extractParam(edvScript, 'PRM_CATALOG_NAME_EDV'),
+            schemaDDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_DDV'),
+            schemaEDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_EDV'),
+            tableName: extractParam(edvScript, 'PRM_TABLE_NAME')
+        }
+    };
+}
+
+function updateManagedTablesInfo() {
+    const infoEl = document.getElementById('managed-info');
+
+    const tempTables = (currentOutputScript.match(/tmp_table\w*\s*=\s*f["'].*?["']/g) || []).length;
+    const saveAsTables = (currentOutputScript.match(/\.saveAsTable\([^)]+\)/g) || []).length;
+    const hasPath = /\.saveAsTable\([^)]*,\s*path\s*=/.test(currentOutputScript);
+
+    infoEl.innerHTML = `
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+            <h4 style="margin-bottom: 1rem;">📊 Resumen de Tablas</h4>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 0.75rem;">
+                    <strong>✅ Tablas Temporales detectadas:</strong> ${tempTables}
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                    <strong>✅ Operaciones saveAsTable:</strong> ${saveAsTables}
+                </li>
+                <li style="margin-bottom: 0.75rem;">
+                    <strong>${hasPath ? '❌' : '✅'} Managed Tables (sin path):</strong> ${hasPath ? 'NO - Aún tiene path=' : 'SÍ - Todas son managed'}
+                </li>
+            </ul>
+            <div style="margin-top: 1.5rem; padding: 1rem; background: ${hasPath ? '#fee2e2' : '#dcfce7'}; border-radius: 6px;">
+                <p style="margin: 0; color: ${hasPath ? '#991b1b' : '#166534'};">
+                    ${hasPath ?
+                        '⚠️ ADVERTENCIA: Se detectó uso de path= en saveAsTable. Las tablas deben ser managed (sin path) para EDV.' :
+                        '✅ CORRECTO: Todas las tablas son managed. Los datos serán administrados por Databricks Unity Catalog.'
+                    }
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function regenerateEDV() {
+    // Get edited values
+    const catalogEDV = document.getElementById('edit-catalog-edv').value;
+    const schemaEDV = document.getElementById('edit-schema-edv').value;
+    const tableName = document.getElementById('edit-table-name').value;
+
+    // Update script with new values
+    let newScript = currentOutputScript;
+
+    if (catalogEDV) {
+        newScript = newScript.replace(
+            /PRM_CATALOG_NAME_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_CATALOG_NAME_EDV", defaultValue='${catalogEDV}'`
+        );
+    }
+
+    if (schemaEDV) {
+        newScript = newScript.replace(
+            /PRM_ESQUEMA_TABLA_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_ESQUEMA_TABLA_EDV", defaultValue='${schemaEDV}'`
+        );
+    }
+
+    if (tableName) {
+        newScript = newScript.replace(
+            /PRM_TABLE_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_TABLE_NAME", defaultValue='${tableName}'`
+        );
+    }
+
+    currentOutputScript = newScript;
+    document.getElementById('output-script').value = newScript;
+    updateOutputStats();
+
+    // Re-validate
+    const validator = new EDVValidatorRiguroso();
+    validationResult = validator.validate(currentOutputScript);
+    updateValidationResults();
+
+    alert('✅ Script EDV re-generado con los nuevos parámetros');
+}
+
+function resetParams() {
+    updateParamsTable();
+    alert('🔄 Parámetros restaurados a valores originales');
+}
+
+function downloadTxt() {
+    if (!currentOutputScript) {
+        alert('⚠️ No hay script para descargar');
+        return;
+    }
+
+    let filename = 'script_edv.txt';
+
+    if (currentInputScript.includes('MATRIZTRANSACCIONAGENTE')) {
+        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONAGENTE_EDV.txt';
+    } else if (currentInputScript.includes('MATRIZTRANSACCIONCAJERO')) {
+        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONCAJERO_EDV.txt';
+    } else if (currentInputScript.includes('MATRIZTRANSACCIONPOSMACROGIRO')) {
+        filename = 'HM_MATRIZTRANSACCIONPOSMACROGIRO_EDV.txt';
+    }
+
+    const blob = new Blob([currentOutputScript], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    console.log(`📄 Script descargado como TXT: ${filename}`);
 }
 
 // ===== KEYBOARD SHORTCUTS =====

@@ -394,32 +394,53 @@ body {
 /* ===== TABS ===== */
 .tabs {
     display: flex;
-    gap: var(--spacing-xs);
-    border-bottom: 2px solid var(--gray-200);
+    gap: 0.25rem;
+    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.05), transparent);
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    border-radius: 8px 8px 0 0;
     margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--gray-200);
 }
 
 .tab {
-    padding: var(--spacing-md) var(--spacing-lg);
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
+    padding: 0.875rem 1.5rem;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid var(--gray-200);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     font-family: var(--font-sans);
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--gray-600);
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s ease;
+    position: relative;
+    margin-bottom: -2px;
 }
 
 .tab:hover {
     color: var(--primary);
-    background-color: var(--gray-50);
+    background: rgba(59, 130, 246, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .tab.active {
     color: var(--primary);
-    border-bottom-color: var(--primary);
+    background: white;
+    border-color: var(--primary);
+    border-bottom-color: white;
+    box-shadow: 0 -2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: white;
 }
 
 .tab-content {
@@ -592,4 +613,72 @@ body {
 
 .hidden {
     display: none !important;
+}
+
+/* ===== PARAMS TABLE ===== */
+.params-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.params-table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+    color: white;
+}
+
+.params-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.params-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.params-table tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.params-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.params-table input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+}
+
+.params-table input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.params-table .param-name {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.params-table .param-value {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--gray-700);
+}
+
+.params-table .param-changed {
+    background: rgba(34, 197, 94, 0.1);
+    border-left: 3px solid #22c55e;
 }

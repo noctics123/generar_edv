@@ -131,7 +131,14 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="tabs">\n                    <button class="tab active" data-tab="diff">?? Diff</button>\n                    <button class="tab" data-tab="output">?? Script EDV</button>\n                    <button class="tab" data-tab="checklist">? Checklist</button>\n                    <button class="tab" data-tab="params">🔧 Parámetros</button>\n                    <button class="tab" data-tab="log">?? Log</button>\n                </div>
+                <div class="tabs">
+                    <button class="tab active" data-tab="diff">📊 Diff</button>
+                    <button class="tab" data-tab="params">🔧 Parámetros</button>
+                    <button class="tab" data-tab="output">📄 Script EDV</button>
+                    <button class="tab" data-tab="checklist">✅ Checklist</button>
+                    <button class="tab" data-tab="managed">💾 Managed Tables</button>
+                    <button class="tab" data-tab="log">📝 Log</button>
+                </div>
 
                 <!-- Tab Content: Diff -->
                 <div class="tab-content active" id="tab-diff">
@@ -154,7 +161,8 @@
                             <span>Script EDV (salida)</span>
                             <div>
                                 <button class="btn btn-sm" id="copy-output">📋 Copiar</button>
-                                <button class="btn btn-sm btn-primary" id="download-output">💾 Descargar</button>
+                                <button class="btn btn-sm btn-primary" id="download-output">💾 Descargar .py</button>
+                                <button class="btn btn-sm btn-secondary" id="download-txt">📄 Descargar .txt</button>
                             </div>
                         </div>
                         <textarea id="output-script" class="code-editor" readonly></textarea>
@@ -172,13 +180,40 @@
                     </div>
                 </div>
 
-                                <!-- Tab Content: Parámetros -->
+                <!-- Tab Content: Parámetros -->
                 <div class="tab-content" id="tab-params">
-                    <div class="log-container">
-                        <h3>🔧 Parámetros detectados</h3>
-                        <div class="log-list" id="params-container"></div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem;">🔧 Parámetros de Conversión DDV → EDV</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Edita los parámetros y haz clic en "Re-generar EDV" para aplicar cambios</p>
+                        <table id="params-table" class="params-table">
+                            <thead>
+                                <tr>
+                                    <th>Parámetro</th>
+                                    <th>DDV (Original)</th>
+                                    <th>EDV (Convertido)</th>
+                                    <th>Editable</th>
+                                </tr>
+                            </thead>
+                            <tbody id="params-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn btn-primary" id="regenerate-edv">⚡ Re-generar EDV con cambios</button>
+                            <button class="btn btn-secondary" id="reset-params">🔄 Restaurar valores</button>
+                        </div>
                     </div>
-                </div><!-- Tab Content: Log -->
+                </div>
+
+                <!-- Tab Content: Managed Tables -->
+                <div class="tab-content" id="tab-managed">
+                    <div class="log-container">
+                        <h3>💾 Tablas Administradas (Managed Tables)</h3>
+                        <div id="managed-info"></div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Log -->
                 <div class="tab-content" id="tab-log">
                     <div class="log-container">
                         <h3>📋 Cambios Aplicados</h3>
