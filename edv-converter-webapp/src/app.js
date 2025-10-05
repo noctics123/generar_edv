@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EDV Converter - Main Application
  * BCP Analytics
  */
@@ -388,3 +388,19 @@ document.addEventListener('keydown', (e) => {
 
 console.log('🚀 EDV Converter v1.0.0');
 console.log('📚 Atajos: Ctrl+Enter (convertir), Ctrl+S (descargar)');
+
+
+function updateParamsTab() {
+    const el = document.getElementById('params-container');
+    if (!validationResult || !validationResult.parameters) {
+        el.innerHTML = '<div class="log-empty">No hay parámetros</div>';
+        return;
+    }
+    const p = validationResult.parameters;
+    const rows = [];
+    rows.push(<div class="log-item"><strong>DDV</strong>: catalog=, schema=</div>);
+    rows.push(<div class="log-item"><strong>EDV</strong>: catalog=, schema=</div>);
+    rows.push(<div class="log-item"><strong>Destino</strong>: table_name=, tabla_segunda=, tmp=, familia=</div>);
+    rows.push(<div class="log-item"><strong>Storage</strong>: container=</div>);
+    el.innerHTML = rows.join('');
+}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -131,12 +131,7 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="tabs">
-                    <button class="tab active" data-tab="diff">📊 Diff</button>
-                    <button class="tab" data-tab="output">📄 Script EDV</button>
-                    <button class="tab" data-tab="checklist">✅ Checklist</button>
-                    <button class="tab" data-tab="log">📝 Log</button>
-                </div>
+                <div class="tabs">\n                    <button class="tab active" data-tab="diff">?? Diff</button>\n                    <button class="tab" data-tab="output">?? Script EDV</button>\n                    <button class="tab" data-tab="checklist">? Checklist</button>\n                    <button class="tab" data-tab="params">🔧 Parámetros</button>\n                    <button class="tab" data-tab="log">?? Log</button>\n                </div>
 
                 <!-- Tab Content: Diff -->
                 <div class="tab-content active" id="tab-diff">
@@ -177,7 +172,13 @@
                     </div>
                 </div>
 
-                <!-- Tab Content: Log -->
+                                <!-- Tab Content: Parámetros -->
+                <div class="tab-content" id="tab-params">
+                    <div class="log-container">
+                        <h3>🔧 Parámetros detectados</h3>
+                        <div class="log-list" id="params-container"></div>
+                    </div>
+                </div><!-- Tab Content: Log -->
                 <div class="tab-content" id="tab-log">
                     <div class="log-container">
                         <h3>📋 Cambios Aplicados</h3>
@@ -205,7 +206,8 @@
 
     <!-- Scripts -->
     <script src="edv-converter-webapp/src/utils/edvConverter.js"></script>
-    <script src="edv-converter-webapp/src/utils/validatorRiguroso.js"></script>
+    <script src="edv-converter-webapp/src/utils/validator.js"></script>
     <script src="edv-converter-webapp/src/app.js"></script>
 </body>
 </html>
+
