@@ -372,10 +372,10 @@ function updateParamsTab() {
     const p = validationResult.parameters;
     const esc = (v) => escapeHtml(String(v ?? "-"));
     const rows = [];
-    rows.push("<div class=\"log-item\"><strong>DDV</strong>: catalog=" + esc(p.ddv?.catalog) + ", schema=" + esc(p.ddv?.schema) + "</div>");
-    rows.push("<div class=\"log-item\"><strong>EDV</strong>: catalog=" + esc(p.edv?.catalog) + ", schema=" + esc(p.edv?.schema) + "</div>");
-    rows.push("<div class=\"log-item\"><strong>Destino</strong>: table_name=" + esc(p.destino?.table_name) + ", tabla_segunda=" + esc(p.destino?.tabla_segunda) + ", tmp=" + esc(p.destino?.tabla_segunda_tmp) + ", familia=" + esc(p.destino?.familia) + "</div>");
-    rows.push("<div class=\"log-item\"><strong>Storage</strong>: container=" + esc(p.storage?.container) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>DDV</strong>: catalog=" + esc((p.ddv && p.ddv.catalog)) + ", schema=" + esc((p.ddv && p.ddv.schema)) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>EDV</strong>: catalog=" + esc((p.edv && p.edv.catalog)) + ", schema=" + esc((p.edv && p.edv.schema)) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>Destino</strong>: table_name=" + esc((p.destino && p.destino.table_name)) + ", tabla_segunda=" + esc((p.destino && p.destino.tabla_segunda)) + ", tmp=" + esc((p.destino && p.destino.tabla_segunda)_tmp) + ", familia=" + esc((p.destino && p.destino.familia)) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>Storage</strong>: container=" + esc((p.storage && p.storage.container)) + "</div>");
     el.innerHTML = rows.join("");
 }
 
