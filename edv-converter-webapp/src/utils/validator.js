@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EDV Validator - Validador de compliance EDV
  * Verifica que un script cumpla con los estándares EDV
  *
@@ -11,6 +11,7 @@ class EDVValidator {
         this.checks = [];
         this.errors = [];
         this.warnings = [];
+        this.context = {};
     }
 
     /**
@@ -22,6 +23,7 @@ class EDVValidator {
         this.checks = [];
         this.errors = [];
         this.warnings = [];
+        this.context = {};
 
         // Ejecutar todas las validaciones
         this.validateEDVWidgets(script);
@@ -35,6 +37,9 @@ class EDVValidator {
         this.validateNoHardcodedPaths(script);
         this.validateDDVSchemaViews(script);
         this.validateDropTableCleanup(script);
+        this.validateWriterOptions(script);
+        this.validateTmpPlacementInEDV(script);
+        this.validateNoResidualDDVDestination(script);
 
         return {
             passed: this.errors.length === 0,
@@ -161,7 +166,7 @@ class EDVValidator {
         }
 
         // Validar que se use spark.table para leer temporales
-        const usesSparkTable = /spark\.table\(/.test(script);
+        const usesSparkTable = /spark\\.(read\\.)?table\\(/.test(script);
         if (usesSparkTable) {
             this.checks.push({
                 name: 'Lectura con spark.table',
@@ -372,6 +377,61 @@ class EDVValidator {
         }
     }
 
+
+    /**
+     * Extrae contexto util del script para checks compuestos
+     */
+    collectContext(script) {
+        return {
+            hasSaveWithPath: /\.saveAsTable\([^)]*path\s*=/.test(script),
+            hasLoadTempFromPath: /spark\.read\.format\([^)]*\)\.load\([^)]*(\/temp\/|CONS_CONTAINER_NAME|PRM_CARPETA_RAIZ_DE_PROYECTO)/i.test(script),
+            tmpAssignInDDV: /(tmp_table\w*)\s*=\s*f["']\{PRM_ESQUEMA_TABLA\}(.+?_tmp["'])/i.test(script),
+            tmpAssignInEDV: /(tmp_table\w*)\s*=\s*f["']\{PRM_ESQUEMA_TABLA_ESCRITURA\}(.+?_tmp["'])/i.test(script),
+            destUsesEDV: /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA_ESCRITURA\s*\+\s*['"]\.["']\s*\+\s*(PRM_TABLE_NAME|PRM_TABLA_SEGUNDATRANSPUESTA|\w+)/.test(script),
+            destUsesDDV: /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*['"]\.["']\s*\+\s*(PRM_TABLE_NAME|PRM_TABLA_SEGUNDATRANSPUESTA|\w+)/.test(script),
+            hasWriteDelta: /write_delta\(/.test(script),
+            repartitionNearWrite: /repartition\([^)]*(CODMES|codmes)[^)]*\)[\s\S]{0,500}write_delta\(/.test(script),
+            partitionByWriter: /\.partitionBy\(\s*(CODMES|codmes|CONS_PARTITION_DELTA_NAME)\s*\)/.test(script),
+            confOverwriteDynamic: /spark\.conf\.set\(\s*['"]spark\.sql\.sources\.partitionOverwriteMode['"]/i.test(script),
+            writerOverwriteDynamic: /option\(\s*['"]partitionOverwritemode['"]/i.test(script),
+        };
+    }
+
+    /**
+     * Valida writer options / conf para overwrite dinamico y particion
+     */
+    validateWriterOptions(script) {
+        const hasDyn = this.context.writerOverwriteDynamic || this.context.confOverwriteDynamic;
+        const hasPart = this.context.partitionByWriter;
+        this.checks.push({ name: 'Overwrite dinamico', passed: !!hasDyn, message: hasDyn ? '? Overwrite dinamico activado (writer/conf)' : '? Falta overwrite dinamico' });
+        if (!hasDyn) this.errors.push('Configurar partitionOverwriteMode=dynamic en writer o spark.conf');
+        this.checks.push({ name: 'Writer particionado', passed: !!hasPart, message: hasPart ? '? Writer usa partitionBy' : '? Writer sin partitionBy' });
+        if (!hasPart) this.errors.push('Agregar .partitionBy(<columna particion>) en write');
+    }
+
+    /**
+     * Valida que las tmp esten en esquema EDV (no DDV)
+     */
+    validateTmpPlacementInEDV(script) {
+        if (this.context.tmpAssignInDDV && !this.context.tmpAssignInEDV) {
+            this.checks.push({ name: 'Temporales en EDV', passed: false, message: '? tmp_table apunta a PRM_ESQUEMA_TABLA (DDV)' });
+            this.errors.push('Reubicar tmp_table a PRM_ESQUEMA_TABLA_ESCRITURA');
+        } else {
+            this.checks.push({ name: 'Temporales en EDV', passed: true, message: '? tmp_table en PRM_ESQUEMA_TABLA_ESCRITURA' });
+        }
+    }
+
+    /**
+     * Valida que no queden destinos residuales en DDV
+     */
+    validateNoResidualDDVDestination(script) {
+        if (this.context.destUsesDDV) {
+            this.checks.push({ name: 'Destino no-DDV', passed: false, message: '? Hay definiciones con PRM_ESQUEMA_TABLA (DDV)' });
+            this.errors.push('Actualizar VAL_DESTINO_NAME para usar PRM_ESQUEMA_TABLA_ESCRITURA');
+        } else {
+            this.checks.push({ name: 'Destino no-DDV', passed: true, message: '? No hay destinos residuales en DDV' });
+        }
+    }
     /**
      * Calcula un score de compliance (0-100)
      */
@@ -403,7 +463,13 @@ class EDVValidator {
     }
 }
 
+
 // Exportar para uso en Node.js o navegador
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = EDVValidator;
 }
+
+
+
+
+
