@@ -13,6 +13,60 @@ class EDVConverter {
     }
 
     /**
+     * Refuerza actualizacion de VAL_DESTINO_NAME para esquemas EDV (casos generales)
+     */
+    fixDestinationName(script) {
+        // PRM_TABLE_NAME
+        script = script.replace(
+            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLE_NAME/g,
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME'
+        );
+        // PRM_TABLA_SEGUNDATRANSPUESTA
+        script = script.replace(
+            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLA_SEGUNDATRANSPUESTA/g,
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA'
+        );
+        // Captura generica de variable a la derecha
+        script = script.replace(
+            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(\w+)/g,
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1'
+        );
+        return script;
+    }
+
+    /**
+     * Reasigna tmp_table / tmp_table_N al esquema EDV si aun apuntan a PRM_ESQUEMA_TABLA
+     */
+    updateTmpAssignmentsToEDV(script) {
+        const tmpAssignPattern = /(tmp_table\w*)\s*=\s*f["']\{PRM_ESQUEMA_TABLA\}(.+?_tmp["'])/g;
+        return script.replace(tmpAssignPattern, "$1 = f'{PRM_ESQUEMA_TABLA_ESCRITURA}$2");
+    }
+
+    /**
+     * Reemplaza lecturas inline de rutas /temp/ por spark.table(schemaEDV.carpeta_tmp)
+     */
+    replaceInlineTempLoads(script) {
+        const loadAnyTempPattern = /spark\.read\.format\([^)]*\)\.load\(([^)]*\/temp\/[^)]*)\)/g;
+        return script.replace(loadAnyTempPattern, (full, inner) => {
+            const m = inner.match(/\/temp\/["']\s*\+\s*(\w+)/);
+            if (m && m[1]) {
+                const varName = m[1];
+                // Construye: spark.table(f'{PRM_ESQUEMA_TABLA_ESCRITURA}.{<varName>}_tmp')
+                return "spark.table(f'" + "{" + "PRM_ESQUEMA_TABLA_ESCRITURA" + "}" + ".{" + varName + "}_tmp')";
+            }
+            return full;
+        });
+    }
+
+    /**
+     * Reemplaza cualquier uso de cleanPaths por un comentario con instruccion de DROP TABLE
+     */
+    replaceAnyCleanPaths(script) {
+        const cleanPattern = /\w+\.cleanPaths\([^)]+\)/g;
+        return script.replace(cleanPattern, '# $&  # REEMPLAZAR con DROP TABLE IF EXISTS');
+    }
+
+    /**
      * Convierte un script DDV a EDV
      * @param {string} ddvScript - Código del script DDV
      * @returns {Object} - { edvScript: string, log: array, warnings: array }
@@ -31,9 +85,14 @@ class EDVConverter {
 
         // 3. Actualizar VAL_DESTINO_NAME
         edvScript = this.updateDestinationName(edvScript);
+        // Refuerzo: forzar que VAL_DESTINO_NAME use esquema EDV en variantes no cubiertas
+        edvScript = this.fixDestinationName(edvScript);
 
         // 4. Convertir temporales a managed tables
         edvScript = this.convertTempTablesToManaged(edvScript);
+        // Refuerzos para temporales: reasignar tmp_table(s) al esquema EDV y reemplazar lecturas inline de rutas
+        edvScript = this.updateTmpAssignmentsToEDV(edvScript);
+        edvScript = this.replaceInlineTempLoads(edvScript);
 
         // 5. Agregar optimizaciones Spark
         edvScript = this.addSparkOptimizations(edvScript);
@@ -43,6 +102,8 @@ class EDVConverter {
 
         // 7. Reemplazar cleanPaths por DROP TABLE
         edvScript = this.replaceCleanPathsWithDrop(edvScript);
+        // Refuerzo: cubrir variantes de cualquierObject.cleanPaths(...)
+        edvScript = this.replaceAnyCleanPaths(edvScript);
 
         // 8. Actualizar schema DDV para usar views (_v)
         edvScript = this.updateDDVSchemaToViews(edvScript);
