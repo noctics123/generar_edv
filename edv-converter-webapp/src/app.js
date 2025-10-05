@@ -86,18 +86,30 @@ function handleFileUpload(event) {
     reader.readAsText(file);
 }
 
-function loadExample(exampleName) {
-    // For now, show alert that examples need to be added
-    alert(`🔜 Ejemplo "${exampleName}" próximamente.\n\nPor ahora, carga tu propio script o pega el código.`);
+async function loadExample(exampleName) {
+    try {
+        // Fetch the DDV example script
+        const response = await fetch(`edv-converter-webapp/examples/${exampleName}/ddv.py`);
 
-    // TODO: Load example from examples/ directory
-    // fetch(`../examples/${exampleName}_ddv.py`)
-    //     .then(response => response.text())
-    //     .then(content => {
-    //         document.getElementById('input-script').value = content;
-    //         currentInputScript = content;
-    //         updateInputStats();
-    //     });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar el ejemplo: ${response.statusText}`);
+        }
+
+        const content = await response.text();
+
+        // Load the script into the input area
+        document.getElementById('input-script').value = content;
+        currentInputScript = content;
+        updateInputStats();
+
+        // Update file name display
+        document.getElementById('file-name').textContent = `📂 Ejemplo: ${exampleName.toUpperCase()}`;
+
+        console.log(`✅ Ejemplo ${exampleName} cargado correctamente`);
+    } catch (error) {
+        console.error('Error cargando ejemplo:', error);
+        alert(`❌ Error al cargar el ejemplo "${exampleName}".\n\n${error.message}`);
+    }
 }
 
 function clearInput() {
