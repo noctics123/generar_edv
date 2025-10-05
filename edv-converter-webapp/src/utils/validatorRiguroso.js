@@ -17,7 +17,7 @@ class EDVValidatorRiguroso {
     extractParameters(script) {
         const getWidgetDefault = (name) => {
             const re = new RegExp(
-                `dbutils\\.widgets\\.text(name="${name}",\\s*defaultValue=\'([^\\]*)\'`
+                `dbutils\.widgets\.text(name="${name}",\s*defaultValue='([^']*)\'`
             );
             const m = script.match(re);
             return m ? m[1] : null;
@@ -98,8 +98,9 @@ class EDVValidatorRiguroso {
             parameters: this.parameters
         };
     }
+    
+    // ... (el resto de los métodos de validación van aquí) ...
 
-    // ... (resto de los métodos de validación) ...
 }
 
 // Exportar

@@ -148,7 +148,7 @@ function convertScript() {
             currentOutputScript = conversionResult.edvScript;
 
             // Validar con validador EDV
-            const validator = new EDVValidator();
+            const validator = new EDVValidatorRiguroso();
             validationResult = validator.validate(currentOutputScript);
 
             // Update UI

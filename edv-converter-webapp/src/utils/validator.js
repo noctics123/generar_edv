@@ -61,7 +61,7 @@ class EDVValidator {
         ),
       destUsesEDV: /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA_ESCRITURA/.test(script),
       destUsesDDV: /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*['"]\.["']\s*\+/.test(script),
-      hasSaveWithPath: /\.saveAsTable\([^)]*path\s*=/.test(script),
+      hasSaveWithPath: /\.saveAsTable\([^)]*path\s*=\//.test(script),
       usesSparkTable: /spark\.(read\.)?table\(/.test(script),
       hasLoadTempFromPath:
         /spark\.read\.format\([^)]*\)\.load\([^)]*(\/temp\/|abfss:\/\/|\/mnt\/)\s*[^)]*\)/i.test(script),
@@ -79,8 +79,8 @@ class EDVValidator {
       partitionByWriter:
         /\.partitionBy\(\s*(CODMES|codmes|CONS_PARTITION_DELTA_NAME)\s*\)/.test(script),
       confOverwriteDynamic:
-        /spark\.conf\.set\(\s*['"]spark\.sql\.sources\.partitionOverwriteMode['"]/i.test(script),
-      writerOverwriteDynamic: /option\(\s*['"]partitionOverwritemode['"]/i.test(script),
+        /spark\.conf\.set\(\s*['"]spark\.sql\.sources\.partitionOverwriteMode['"]/.test(script),
+      writerOverwriteDynamic: /option\(\s*['"]partitionOverwritemode['"]/.test(script),
       hasAQE: /spark\.sql\.adaptive\.enabled/.test(script),
       hasBroadcast: /spark\.sql\.autoBroadcastJoinThreshold/.test(script),
       hasOptimizeWrite: /spark\.databricks\.delta\.optimizeWrite\.enabled/.test(script),
@@ -92,7 +92,7 @@ class EDVValidator {
   extractParameters(script) {
     const getWidgetDefault = (name) => {
       const re = new RegExp(
-        `dbutils\\.widgets\\.text\\\\(name=\\\"${name}\\\",\\s*defaultValue=\\\'([^\\']*)\\\'`,
+        `dbutils\\.widgets\\.text\\(name=\\\"${name}\\\",\\s*defaultValue=\\'([\\\']*)`
       );
       const m = script.match(re);
       return m ? m[1] : null;
@@ -237,7 +237,7 @@ class EDVValidator {
   }
 
   validateNoHardcodedPaths(script) {
-    const hasWriterPath = /\.saveAsTable\([^)]*path\s*=\s*['"][^'"]+['"]/i.test(script);
+    const hasWriterPath = /.saveAsTable\([^)]*path\s*=\s*['"][^'"]+['"]/i.test(script);
     const hasLoadPath = /spark\.read\.format\([^)]*\)\.load\([^)]*(abfss:\/\/|\/mnt\/)\s*[^)]*\)/i.test(script);
     if (!hasWriterPath && !hasLoadPath) this.checks.push({ name: 'Rutas hardcodeadas', passed: true, message: '✅ Sin rutas hardcodeadas (writer/load)' });
     else {
@@ -330,4 +330,3 @@ if (typeof window !== 'undefined') {
   window.EDVValidator = EDVValidator;
   if (!window.EDVValidatorRiguroso) window.EDVValidatorRiguroso = EDVValidator;
 }
-
