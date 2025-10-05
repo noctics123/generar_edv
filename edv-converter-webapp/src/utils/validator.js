@@ -92,7 +92,7 @@ class EDVValidator {
   extractParameters(script) {
     const getWidgetDefault = (name) => {
       const re = new RegExp(
-        `dbutils\\.widgets\\.text\\(name=\\\"${name}\\\",\\s*defaultValue=\\'([\\\']*)`
+        `dbutils\\.widgets\\.text(name=\"${name}\",\\s*defaultValue=\\'([^\\]*)\\'`
       );
       const m = script.match(re);
       return m ? m[1] : null;
@@ -106,7 +106,7 @@ class EDVValidator {
     const tableName = getWidgetDefault('PRM_TABLE_NAME');
     const tablaSegunda = getWidgetDefault('PRM_TABLA_SEGUNDATRANSPUESTA');
     const tablaSegundaTmp = getWidgetDefault('PRM_TABLA_SEGUNDATRANSPUESTA_TMP');
-    const container = (script.match(/CONS_CONTAINER_NAME\s*=\s*['"]([^'"]+)['"]/i) || [])[1] || null;
+    const container = (script.match(/CONS_CONTAINER_NAME\s*=\s*['"]([^'^"]+)['"]/i) || [])[1] || null;
 
     // Deducción de familia
     let familia = 'desconocida';

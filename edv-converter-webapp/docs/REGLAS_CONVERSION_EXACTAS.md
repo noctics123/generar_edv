@@ -2,6 +2,46 @@
 
 ## 📋 Cambios Obligatorios
 
+### 0. AMBIENTE - Actualizar constantes y parámetros de ambiente (CRÍTICO)
+
+**UBICACIÓN:** Sección de constantes y widgets
+
+**CAMBIOS OBLIGATORIOS:**
+
+**0.1 CONS_CONTAINER_NAME** - Cambiar de desarrollo (lhcldata) a producción (bcp-edv-trdata-012):
+```python
+# DDV (desarrollo):
+CONS_CONTAINER_NAME = "abfss://lhcldata@"
+
+# EDV (producción):
+CONS_CONTAINER_NAME = "abfss://bcp-edv-trdata-012@"
+```
+
+**0.2 PRM_STORAGE_ACCOUNT_DDV** - Cambiar de desarrollo (d03) a producción (p05):
+```python
+# DDV (desarrollo):
+dbutils.widgets.text(name="PRM_STORAGE_ACCOUNT_DDV", defaultValue='adlscu1lhclbackd03')
+
+# EDV (producción):
+dbutils.widgets.text(name="PRM_STORAGE_ACCOUNT_DDV", defaultValue='adlscu1lhclbackp05')
+```
+
+**0.3 PRM_CATALOG_NAME** - Cambiar de desarrollo (desa) a producción (prod):
+```python
+# DDV (desarrollo):
+dbutils.widgets.text(name="PRM_CATALOG_NAME", defaultValue='catalog_lhcl_desa_bcp')
+
+# EDV (producción):
+dbutils.widgets.text(name="PRM_CATALOG_NAME", defaultValue='catalog_lhcl_prod_bcp')
+```
+
+**VALIDACIÓN:**
+- ✅ CONS_CONTAINER_NAME debe ser: `abfss://bcp-edv-trdata-012@`
+- ✅ PRM_STORAGE_ACCOUNT_DDV debe ser: `adlscu1lhclbackp05`
+- ✅ PRM_CATALOG_NAME debe ser: `catalog_lhcl_prod_bcp`
+
+---
+
 ### 1. WIDGETS - Agregar 2 nuevos widgets EDV
 
 **UBICACIÓN:** Después del último widget existente (después de `PRM_TABLA_PARAM_GRUPO`)
@@ -152,6 +192,16 @@ spark.sql(f"DROP TABLE IF EXISTS {PRM_ESQUEMA_TABLA_ESCRITURA}.carpeta2_tmp")
 ---
 
 ## 📊 Checklist de Validación Rigurosa
+
+### Nivel 0: Ambiente EDV (CRÍTICO - Sin puntos pero OBLIGATORIO)
+
+| # | Check | Pattern | Obligatorio |
+|---|-------|---------|-------------|
+| 0.1 | Container Name EDV | `CONS_CONTAINER_NAME = "abfss://bcp-edv-trdata-012@"` | ✅ SÍ |
+| 0.2 | Storage Account Producción | `defaultValue='adlscu1lhclbackp05'` en PRM_STORAGE_ACCOUNT_DDV | ✅ SÍ |
+| 0.3 | Catalog Producción | `defaultValue='catalog_lhcl_prod_bcp'` en PRM_CATALOG_NAME | ✅ SÍ |
+
+**Penalización:** Si cualquiera de estos checks falla, se restan -20 puntos cada uno. Son CRÍTICOS porque definen el ambiente correcto de producción.
 
 ### Nivel 1: Parámetros EDV (CRÍTICO)
 
