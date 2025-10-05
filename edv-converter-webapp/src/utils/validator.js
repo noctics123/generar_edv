@@ -324,3 +324,10 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = EDVValidator;
 }
 
+
+// Browser globals aliases for backward-compat
+if (typeof window !== 'undefined') {
+  window.EDVValidator = EDVValidator;
+  if (!window.EDVValidatorRiguroso) window.EDVValidatorRiguroso = EDVValidator;
+}
+
