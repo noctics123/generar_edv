@@ -95,8 +95,7 @@
                         <button class="btn btn-sm" id="clear-input">🗑️ Limpiar</button>
                     </div>
                     <div class="code-editor-wrapper">
-                        <textarea id="input-script" class="code-editor" placeholder="Pega tu script DDV aquí o carga un archivo..." spellcheck="false"></textarea>
-                        <pre id="input-highlight" class="code-highlight"><code class="language-python"></code></pre>
+                        <pre id="input-script" class="code-editor" contenteditable="true" spellcheck="false" data-placeholder="Pega tu script DDV aquí o carga un archivo..."><code class="language-python"></code></pre>
                     </div>
                     <div class="editor-footer">
                         <span id="input-lines">0 líneas</span>
@@ -227,8 +226,7 @@
                             </div>
                         </div>
                         <div class="code-editor-wrapper">
-                            <textarea id="output-script" class="code-editor" readonly spellcheck="false"></textarea>
-                            <pre id="output-highlight" class="code-highlight"><code class="language-python"></code></pre>
+                            <pre id="output-script" class="code-editor" contenteditable="false" spellcheck="false"><code class="language-python"></code></pre>
                         </div>
                         <div class="editor-footer">
                             <span id="output-lines">0 líneas</span>

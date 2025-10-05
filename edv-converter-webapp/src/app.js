@@ -83,7 +83,7 @@ function handleFileUpload(event) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const content = e.target.result;
-        document.getElementById('input-script').value = content;
+        setEditorContent('input-script', content);
         currentInputScript = content;
         updateInputStats();
         console.log(`✅ Archivo cargado: ${file.name}`);
@@ -103,7 +103,7 @@ async function loadExample(exampleName) {
         const content = await response.text();
 
         // Load the script into the input area
-        document.getElementById('input-script').value = content;
+        setEditorContent('input-script', content);
         currentInputScript = content;
         updateInputStats();
 
@@ -118,7 +118,7 @@ async function loadExample(exampleName) {
 }
 
 function clearInput() {
-    document.getElementById('input-script').value = '';
+    setEditorContent('input-script', '');
     document.getElementById('file-name').textContent = 'Ningún archivo seleccionado';
     document.getElementById('file-upload').value = '';
     currentInputScript = '';
@@ -143,7 +143,7 @@ function updateStats(script, linesElementId, sizeElementId) {
 }
 
 function updateInputStats() {
-    const script = document.getElementById('input-script').value;
+    const script = getEditorContent('input-script');
     currentInputScript = script;
     updateStats(script, 'input-lines', 'input-size');
 }
@@ -244,11 +244,8 @@ function updateConversionResults() {
     document.getElementById('stat-warnings').textContent = conversionResult.warnings.length;
 
     // Update output editor
-    document.getElementById('output-script').value = currentOutputScript;
+    setEditorContent('output-script', currentOutputScript);
     updateOutputStats();
-
-    // Update syntax highlighting for output
-    updateOutputHighlight();
 
     // Update log tab
     updateLogTab();
@@ -387,19 +384,23 @@ function switchTab(tabName) {
 
 // ===== OUTPUT ACTIONS =====
 function copyOutput() {
-    const outputScript = document.getElementById('output-script');
-    outputScript.select();
-    document.execCommand('copy');
+    const content = getEditorContent('output-script');
 
-    // Visual feedback
-    const btn = document.getElementById('copy-output');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '✅ Copiado';
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-    }, 2000);
+    // Use modern clipboard API
+    navigator.clipboard.writeText(content).then(() => {
+        // Visual feedback
+        const btn = document.getElementById('copy-output');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Copiado';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
 
-    console.log('📋 Script copiado al portapapeles');
+        console.log('📋 Script copiado al portapapeles');
+    }).catch(err => {
+        console.error('Error al copiar:', err);
+        alert('❌ Error al copiar al portapapeles');
+    });
 }
 
 /**
@@ -736,11 +737,8 @@ function regenerateEDV() {
     });
 
     currentOutputScript = newScript;
-    document.getElementById('output-script').value = newScript;
+    setEditorContent('output-script', newScript);
     updateOutputStats();
-
-    // Update syntax highlighting
-    updateOutputHighlight();
 
     // Re-validate
     const validator = new EDVValidatorRiguroso();
@@ -784,54 +782,54 @@ console.log('📚 Atajos: Ctrl+Enter (convertir), Ctrl+S (descargar)');
 
 // ===== SYNTAX HIGHLIGHTING =====
 
-function initializeSyntaxHighlighting() {
-    // Input editor
-    const inputTextarea = document.getElementById('input-script');
-    const inputHighlight = document.getElementById('input-highlight').querySelector('code');
+/**
+ * Get text content from contenteditable pre>code editor
+ */
+function getEditorContent(editorId) {
+    const editor = document.getElementById(editorId);
+    const codeElement = editor.querySelector('code');
+    return codeElement ? codeElement.textContent : '';
+}
 
-    // Output editor
-    const outputTextarea = document.getElementById('output-script');
-    const outputHighlight = document.getElementById('output-highlight').querySelector('code');
+/**
+ * Set text content in contenteditable pre>code editor with syntax highlighting
+ */
+function setEditorContent(editorId, content) {
+    const editor = document.getElementById(editorId);
+    const codeElement = editor.querySelector('code');
 
-    // Función para actualizar highlight
-    function updateHighlight(textarea, highlightCode) {
-        const code = textarea.value;
-        highlightCode.textContent = code;
-        Prism.highlightElement(highlightCode);
-    }
-
-    // Función para sincronizar scroll
-    function syncScroll(from, to) {
-        to.scrollTop = from.scrollTop;
-        to.scrollLeft = from.scrollLeft;
-    }
-
-    // Event listeners para input
-    inputTextarea.addEventListener('input', () => updateHighlight(inputTextarea, inputHighlight));
-    inputTextarea.addEventListener('scroll', () => {
-        const pre = document.getElementById('input-highlight');
-        syncScroll(inputTextarea, pre);
-    });
-
-    // Event listeners para output
-    outputTextarea.addEventListener('scroll', () => {
-        const pre = document.getElementById('output-highlight');
-        syncScroll(outputTextarea, pre);
-    });
-
-    // Actualizar highlight inicial si hay contenido
-    if (inputTextarea.value) {
-        updateHighlight(inputTextarea, inputHighlight);
+    if (codeElement) {
+        codeElement.textContent = content;
+        Prism.highlightElement(codeElement);
     }
 }
 
-// Función helper para actualizar output highlight desde otras funciones
-function updateOutputHighlight() {
-    const outputTextarea = document.getElementById('output-script');
-    const outputHighlight = document.getElementById('output-highlight').querySelector('code');
+function initializeSyntaxHighlighting() {
+    // Input editor
+    const inputEditor = document.getElementById('input-script');
+    const inputCode = inputEditor.querySelector('code');
 
-    outputHighlight.textContent = outputTextarea.value;
-    Prism.highlightElement(outputHighlight);
+    // Event listener para actualizar highlighting en tiempo real
+    inputEditor.addEventListener('input', () => {
+        // Re-highlight después de cada cambio
+        if (inputCode) {
+            Prism.highlightElement(inputCode);
+        }
+        // Update stats
+        updateInputStats();
+    });
+
+    // Prevent pasting HTML, only paste plain text
+    inputEditor.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    // Actualizar highlight inicial si hay contenido
+    if (inputCode && inputCode.textContent) {
+        Prism.highlightElement(inputCode);
+    }
 }
 
 // ===== MULTI-PERIODO =====
