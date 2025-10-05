@@ -17,11 +17,53 @@ class EDVValidatorRiguroso {
     /**
      * Valida un script EDV con máximo rigor
      */
+    extractParameters(script) {
+        const getWidgetDefault = (name) => {
+            const re = new RegExp(
+                `dbutils\\.widgets\\.text\\(name=\"${name}\",\s*defaultValue=\\'([^\']*)\\'`,
+            );
+            const m = script.match(re);
+            return m ? m[1] : null;
+        };
+
+        const ddvCatalog = getWidgetDefault('PRM_CATALOG_NAME');
+        const ddvSchema =
+            getWidgetDefault('PRM_ESQUEMA_TABLA_DDV') || getWidgetDefault('PRM_ESQUEMA_TABLA_X');
+        const edvCatalog = getWidgetDefault('PRM_CATALOG_NAME_EDV');
+        const edvSchema = getWidgetDefault('PRM_ESQUEMA_TABLA_EDV');
+        const tableName = getWidgetDefault('PRM_TABLE_NAME');
+        const tablaSegunda = getWidgetDefault('PRM_TABLA_SEGUNDATRANSPUESTA');
+        const tablaSegundaTmp = getWidgetDefault('PRM_TABLA_SEGUNDATRANSPUESTA_TMP');
+        const container = (script.match(/CONS_CONTAINER_NAME\s*=\s*['"]([^'"]+)['"]/i) || [])[1] || null;
+
+        // Deducción de familia
+        let familia = 'desconocida';
+        if (/MATRIZTRANSACCIONPOSMACROGIRO/i.test(script)) familia = 'macrogiro';
+        else if (/MATRIZTRANSACCIONAGENTE/i.test(script)) familia = 'agente';
+        else if (/MATRIZTRANSACCIONCAJERO/i.test(script)) familia = 'cajero';
+
+        return {
+            ddv: { catalog: ddvCatalog, schema: ddvSchema },
+            edv: { catalog: edvCatalog, schema: edvSchema },
+            destino: {
+                table_name: tableName,
+                tabla_segunda: tablaSegunda,
+                tabla_segunda_tmp: tablaSegundaTmp,
+                familia,
+            },
+            storage: { container },
+        };
+    }
+
+    /**
+     * Valida un script EDV con máximo rigor
+     */
     validate(script) {
         this.checks = [];
         this.errors = [];
         this.warnings = [];
         this.score = 0;
+        this.parameters = this.extractParameters(script);
 
         // NIVEL 0: Ambiente EDV (CRÍTICO - validaciones sin puntos, pero obligatorias)
         this.validateContainerName(script);
@@ -58,7 +100,8 @@ class EDVValidatorRiguroso {
             errors: this.errors,
             warnings: this.warnings,
             score: Math.min(this.score, 100),
-            level: this.getComplianceLevel()
+            level: this.getComplianceLevel(),
+            parameters: this.parameters
         };
     }
 
