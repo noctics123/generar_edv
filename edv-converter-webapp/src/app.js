@@ -161,14 +161,21 @@ function convertScript() {
 
     console.log('🔄 Iniciando conversión...');
 
-    // Leer configuración de switches
+    // Leer configuración de switches de setup
     window.edvSetupOptions = {
         restartPython: document.getElementById('switch-restart-python').checked,
         pipInstall: document.getElementById('switch-pip-install').checked,
         removeAllWidgets: document.getElementById('switch-remove-widgets').checked
     };
 
+    // Leer configuración de switches de conversión (sufijos y rutas)
+    window.edvConversionOptions = {
+        usarSufijoRuben: document.getElementById('switch-sufijo-ruben').checked,
+        usarRutasRuben: document.getElementById('switch-rutas-ruben').checked
+    };
+
     console.log('⚙️ Opciones de setup:', window.edvSetupOptions);
+    console.log('🏷️ Opciones de conversión:', window.edvConversionOptions);
 
     // Show loading state
     const convertBtn = document.getElementById('convert-btn');
@@ -534,6 +541,30 @@ function updateParamsTable() {
         </tr>
     `);
 
+    // Row 9: Carpeta Output (si se agregó)
+    if (params.edv.carpetaOutput) {
+        rows.push(`
+            <tr>
+                <td class="param-name">PRM_CARPETA_OUTPUT <span style="font-size: 0.8em; color: #666;">(ruta save)</span></td>
+                <td class="param-value">${escapeHtml(params.ddv.carpetaOutput || '-')}</td>
+                <td><input type="text" id="edit-carpeta-output" value="${escapeHtml(params.edv.carpetaOutput || '')}" placeholder="data/RUBEN/DEUDA_TECNICA/out" /></td>
+                <td>✏️</td>
+            </tr>
+        `);
+    }
+
+    // Row 10: Ruta ADLS Tables (si se agregó)
+    if (params.edv.rutaAdls) {
+        rows.push(`
+            <tr>
+                <td class="param-name">PRM_RUTA_ADLS_TABLES <span style="font-size: 0.8em; color: #666;">(ruta ADLS)</span></td>
+                <td class="param-value">${escapeHtml(params.ddv.rutaAdls || '-')}</td>
+                <td><input type="text" id="edit-ruta-adls" value="${escapeHtml(params.edv.rutaAdls || '')}" placeholder="data/RUBEN/DEUDA_TECNICA/matrizvariables" /></td>
+                <td>✏️</td>
+            </tr>
+        `);
+    }
+
     tbody.innerHTML = rows.join('');
 }
 
@@ -573,6 +604,8 @@ function extractParamsFromScripts(ddvScript, edvScript) {
         result.schemaDDV = extractValue(script, 'PRM_ESQUEMA_TABLA_DDV');
         result.tableName = extractValue(script, 'PRM_TABLE_NAME');
         result.fecha = extractValue(script, 'PRM_FECHA_RUTINA');
+        result.carpetaOutput = extractValue(script, 'PRM_CARPETA_OUTPUT');
+        result.rutaAdls = extractValue(script, 'PRM_RUTA_ADLS_TABLES');
 
         // EDV-specific parameters
         if (includeEDVParams) {
@@ -672,6 +705,18 @@ function regenerateEDV() {
             pattern: /PRM_FECHA_RUTINA["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
             replacement: (val) => `PRM_FECHA_RUTINA", defaultValue='${val}'`,
             name: 'PRM_FECHA_RUTINA'
+        },
+        {
+            id: 'edit-carpeta-output',
+            pattern: /PRM_CARPETA_OUTPUT["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_CARPETA_OUTPUT", defaultValue='${val}'`,
+            name: 'PRM_CARPETA_OUTPUT'
+        },
+        {
+            id: 'edit-ruta-adls',
+            pattern: /PRM_RUTA_ADLS_TABLES["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_RUTA_ADLS_TABLES", defaultValue='${val}'`,
+            name: 'PRM_RUTA_ADLS_TABLES'
         }
     ];
 

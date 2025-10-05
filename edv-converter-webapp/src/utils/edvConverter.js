@@ -75,24 +75,44 @@ class EDVConverter {
 
     /**
      * Refuerza actualizacion de VAL_DESTINO_NAME para esquemas EDV (casos generales)
-     * Aplica sufijo a la tabla final
+     * Aplica sufijo a la tabla final si está activado
      */
     fixDestinationName(script) {
-        // PRM_TABLE_NAME con sufijo
-        script = script.replace(
-            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLE_NAME/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME + "_" + PRM_SUFIJO_TABLA'
-        );
-        // PRM_TABLA_SEGUNDATRANSPUESTA con sufijo
-        script = script.replace(
-            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLA_SEGUNDATRANSPUESTA/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA + "_" + PRM_SUFIJO_TABLA'
-        );
-        // Captura generica de variable a la derecha con sufijo
-        script = script.replace(
-            /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(\w+)/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1 + "_" + PRM_SUFIJO_TABLA'
-        );
+        // Obtener opciones de switches
+        const options = window.edvConversionOptions || {};
+        const usarSufijoRuben = options.usarSufijoRuben !== false; // default true
+
+        if (usarSufijoRuben) {
+            // PRM_TABLE_NAME con sufijo
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLE_NAME/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME + "_" + PRM_SUFIJO_TABLA'
+            );
+            // PRM_TABLA_SEGUNDATRANSPUESTA con sufijo
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLA_SEGUNDATRANSPUESTA/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA + "_" + PRM_SUFIJO_TABLA'
+            );
+            // Captura generica de variable a la derecha con sufijo
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(\w+)/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1 + "_" + PRM_SUFIJO_TABLA'
+            );
+        } else {
+            // Sin sufijo
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLE_NAME/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME'
+            );
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLA_SEGUNDATRANSPUESTA/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA'
+            );
+            script = script.replace(
+                /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(\w+)/g,
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1'
+            );
+        }
         return script;
     }
 
@@ -129,11 +149,19 @@ class EDVConverter {
     }
 
     /**
-     * Aplica sufijo (PRM_SUFIJO_TABLA) a nombres de tablas temporales
+     * Aplica sufijo (PRM_SUFIJO_TABLA) a nombres de tablas temporales si está activado
      * Modifica: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.nombre_tmp'
      * A: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.nombre_tmp_{PRM_SUFIJO_TABLA}'
      */
     applySufijoToTempTables(script) {
+        // Obtener opciones de switches
+        const options = window.edvConversionOptions || {};
+        const usarSufijoRuben = options.usarSufijoRuben !== false; // default true
+
+        if (!usarSufijoRuben) {
+            return script; // No aplicar sufijo si está desactivado
+        }
+
         // Patrón: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.XXX_tmp'
         const tmpPattern = /(tmp_table\w*)\s*=\s*f['"](\{PRM_ESQUEMA_TABLA_ESCRITURA\}\.[\w]+_tmp)['"]/g;
 
@@ -302,10 +330,21 @@ dbutils.widgets.removeAll()
             return script;
         }
 
-        const edvWidgets = `dbutils.widgets.text(name="PRM_CATALOG_NAME_EDV", defaultValue='catalog_lhcl_prod_bcp_expl')
+        // Obtener opciones de switches
+        const options = window.edvConversionOptions || {};
+        const usarRutasRuben = options.usarRutasRuben !== false; // default true
+
+        let edvWidgets = `dbutils.widgets.text(name="PRM_CATALOG_NAME_EDV", defaultValue='catalog_lhcl_prod_bcp_expl')
 dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_012')
 dbutils.widgets.text(name="PRM_SUFIJO_TABLA", defaultValue='RUBEN')
 `;
+
+        // Agregar widgets de rutas si está activado
+        if (usarRutasRuben) {
+            edvWidgets += `dbutils.widgets.text(name="PRM_CARPETA_OUTPUT", defaultValue='data/RUBEN/DEUDA_TECNICA/out')
+dbutils.widgets.text(name="PRM_RUTA_ADLS_TABLES", defaultValue='data/RUBEN/DEUDA_TECNICA/matrizvariables')
+`;
+        }
 
         // Buscar PRM_TABLA_PARAM_GRUPO (último widget común) para insertar después
         const lastWidgetPattern = /dbutils\.widgets\.text\(name="PRM_TABLA_PARAM_GRUPO"[^\n]+\n/;
@@ -346,10 +385,21 @@ dbutils.widgets.text(name="PRM_SUFIJO_TABLA", defaultValue='RUBEN')
             return script;
         }
 
-        const edvVarsCode = `PRM_CATALOG_NAME_EDV = dbutils.widgets.get("PRM_CATALOG_NAME_EDV")
+        // Obtener opciones de switches
+        const options = window.edvConversionOptions || {};
+        const usarRutasRuben = options.usarRutasRuben !== false; // default true
+
+        let edvVarsCode = `PRM_CATALOG_NAME_EDV = dbutils.widgets.get("PRM_CATALOG_NAME_EDV")
 PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
 PRM_SUFIJO_TABLA = dbutils.widgets.get("PRM_SUFIJO_TABLA")
 `;
+
+        // Agregar variables de rutas si está activado
+        if (usarRutasRuben) {
+            edvVarsCode += `PRM_CARPETA_OUTPUT = dbutils.widgets.get("PRM_CARPETA_OUTPUT")
+PRM_RUTA_ADLS_TABLES = dbutils.widgets.get("PRM_RUTA_ADLS_TABLES")
+`;
+        }
 
         // Buscar PRM_TABLA_PARAM_GRUPO get (último común)
         const lastGetPattern = /PRM_TABLA_PARAM_GRUPO\s*=\s*dbutils\.widgets\.get\("PRM_TABLA_PARAM_GRUPO"\)\s*\n/;

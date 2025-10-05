@@ -100,26 +100,55 @@
 
                 <!-- Setup Commands Options -->
                 <div style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
-                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">⚙️ Comandos de Setup EDV</h3>
-                    <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
-                        Selecciona qué comandos agregar al inicio del script EDV:
-                    </p>
-                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
-                        <label class="switch-container">
-                            <input type="checkbox" id="switch-restart-python" checked>
-                            <span class="switch-slider"></span>
-                            <span class="switch-label">🔄 dbutils.library.restartPython()</span>
-                        </label>
-                        <label class="switch-container">
-                            <input type="checkbox" id="switch-pip-install" checked>
-                            <span class="switch-slider"></span>
-                            <span class="switch-label">📦 pip install bcp_coe_data_cleaner</span>
-                        </label>
-                        <label class="switch-container">
-                            <input type="checkbox" id="switch-remove-widgets" checked>
-                            <span class="switch-slider"></span>
-                            <span class="switch-label">🗑️ dbutils.widgets.removeAll()</span>
-                        </label>
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">⚙️ Opciones de Conversión EDV</h3>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="margin-bottom: 0.75rem; font-size: 1rem; color: #333;">📋 Comandos de Setup</h4>
+                        <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
+                            Comandos a agregar al inicio del script:
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+                            <label class="switch-container">
+                                <input type="checkbox" id="switch-restart-python" checked>
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">🔄 dbutils.library.restartPython()</span>
+                            </label>
+                            <label class="switch-container">
+                                <input type="checkbox" id="switch-pip-install" checked>
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">📦 pip install bcp_coe_data_cleaner</span>
+                            </label>
+                            <label class="switch-container">
+                                <input type="checkbox" id="switch-remove-widgets" checked>
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">🗑️ dbutils.widgets.removeAll()</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid #dee2e6; padding-top: 1.5rem;">
+                        <h4 style="margin-bottom: 0.75rem; font-size: 1rem; color: #333;">🏷️ Nomenclatura y Rutas</h4>
+                        <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
+                            Configuración de sufijos y rutas por defecto:
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+                            <label class="switch-container">
+                                <input type="checkbox" id="switch-sufijo-ruben" checked>
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">🏷️ Aplicar sufijo "_RUBEN" a tablas</span>
+                            </label>
+                            <label class="switch-container">
+                                <input type="checkbox" id="switch-rutas-ruben" checked>
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">📁 Usar rutas carpeta RUBEN</span>
+                            </label>
+                        </div>
+                        <div style="margin-top: 1rem; padding: 0.75rem; background: #e3f2fd; border-radius: 6px; font-size: 0.85rem; color: #1565c0;">
+                            ℹ️ <strong>Rutas por defecto:</strong><br>
+                            • PRM_CARPETA_OUTPUT: data/RUBEN/DEUDA_TECNICA/out<br>
+                            • PRM_RUTA_ADLS_TABLES: data/RUBEN/DEUDA_TECNICA/matrizvariables<br>
+                            <em style="font-size: 0.8rem; color: #666;">(Editables en pestaña "Parámetros" después de convertir)</em>
+                        </div>
                     </div>
                 </div>
 
