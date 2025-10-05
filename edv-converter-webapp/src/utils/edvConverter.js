@@ -285,14 +285,24 @@ dbutils.widgets.removeAll()
 `;
         }
 
-        setupCommands += '# COMMAND ----------\n';
-
         // Insertar después del header (# ||****... o primera línea)
         const headerEndPattern = /# \*+\s*\n/;
         const headerMatch = script.match(headerEndPattern);
 
         if (headerMatch) {
             const insertPos = headerMatch.index + headerMatch[0].length;
+
+            // Verificar si ya existe # COMMAND ---------- inmediatamente después
+            const afterHeader = script.slice(insertPos).trim();
+            const hasCOMMAND = afterHeader.startsWith('# COMMAND ----------');
+
+            // Solo agregar separador final si:
+            // 1. Se agregaron comandos Y
+            // 2. El script NO tiene ya un # COMMAND ---------- después del header
+            if (setupCommands.trim().length > 0 && !hasCOMMAND) {
+                setupCommands += '# COMMAND ----------\n';
+            }
+
             script = script.slice(0, insertPos) + setupCommands + script.slice(insertPos);
 
             const comandosAgregados = [];
