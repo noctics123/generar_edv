@@ -414,72 +414,82 @@ function updateParamsTable() {
 
     const rows = [];
 
-    // Row 1: Container
+    // Row 1: Container (DDV lee → EDV escribe)
     rows.push(`
         <tr>
             <td class="param-name">CONS_CONTAINER_NAME</td>
-            <td class="param-value">${escapeHtml(params.ddv.container || '-')}</td>
-            <td class="param-value">${escapeHtml(params.edv.container || '-')}</td>
-            <td>-</td>
+            <td class="param-value" title="Para lectura DDV">${escapeHtml(params.ddv.container || '-')}</td>
+            <td><input type="text" id="edit-container" value="${escapeHtml(params.edv.container || '')}" placeholder="abfss://bcp-edv-trdata-012@" /></td>
+            <td>✏️</td>
         </tr>
     `);
 
-    // Row 2: Storage Account
+    // Row 2: Storage Account (DDV desarrollo → EDV producción)
     rows.push(`
         <tr>
             <td class="param-name">PRM_STORAGE_ACCOUNT_DDV</td>
-            <td class="param-value">${escapeHtml(params.ddv.storageAccount || '-')}</td>
-            <td class="param-value">${escapeHtml(params.edv.storageAccount || '-')}</td>
-            <td>-</td>
-        </tr>
-    `);
-
-    // Row 3: Catalog DDV
-    rows.push(`
-        <tr>
-            <td class="param-name">PRM_CATALOG_NAME</td>
-            <td class="param-value">${escapeHtml(params.ddv.catalogDDV || '-')}</td>
-            <td class="param-value">${escapeHtml(params.edv.catalogDDV || '-')}</td>
-            <td>-</td>
-        </tr>
-    `);
-
-    // Row 4: Catalog EDV
-    rows.push(`
-        <tr>
-            <td class="param-name">PRM_CATALOG_NAME_EDV</td>
-            <td class="param-value">-</td>
-            <td><input type="text" id="edit-catalog-edv" value="${escapeHtml(params.edv.catalogEDV || '')}" /></td>
+            <td class="param-value" title="Desarrollo">${escapeHtml(params.ddv.storageAccount || '-')}</td>
+            <td><input type="text" id="edit-storage" value="${escapeHtml(params.edv.storageAccount || '')}" placeholder="adlscu1lhclbackp05" /></td>
             <td>✏️</td>
         </tr>
     `);
 
-    // Row 5: Schema DDV
+    // Row 3: Catalog (DDV desarrollo → EDV producción, MISMO PARAM)
     rows.push(`
         <tr>
-            <td class="param-name">PRM_ESQUEMA_TABLA_DDV</td>
+            <td class="param-name">PRM_CATALOG_NAME <span style="font-size: 0.8em; color: #666;">(lectura)</span></td>
+            <td class="param-value" title="Desarrollo">${escapeHtml(params.ddv.catalogDDV || '-')}</td>
+            <td><input type="text" id="edit-catalog-ddv" value="${escapeHtml(params.edv.catalogDDV || '')}" placeholder="catalog_lhcl_prod_bcp" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 4: Catalog EDV (nuevo parámetro para escritura)
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_CATALOG_NAME_EDV <span style="font-size: 0.8em; color: #666;">(escritura)</span></td>
+            <td class="param-value" style="color: #999;">N/A (solo EDV)</td>
+            <td><input type="text" id="edit-catalog-edv" value="${escapeHtml(params.edv.catalogEDV || '')}" placeholder="catalog_lhcl_prod_bcp_expl" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 5: Schema DDV (MISMO PARAM, solo cambia sufijo _v)
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_ESQUEMA_TABLA_DDV <span style="font-size: 0.8em; color: #666;">(lectura con views)</span></td>
             <td class="param-value">${escapeHtml(params.ddv.schemaDDV || '-')}</td>
-            <td class="param-value">${escapeHtml(params.edv.schemaDDV || '-')}</td>
-            <td>-</td>
-        </tr>
-    `);
-
-    // Row 6: Schema EDV
-    rows.push(`
-        <tr>
-            <td class="param-name">PRM_ESQUEMA_TABLA_EDV</td>
-            <td class="param-value">-</td>
-            <td><input type="text" id="edit-schema-edv" value="${escapeHtml(params.edv.schemaEDV || '')}" /></td>
+            <td><input type="text" id="edit-schema-ddv" value="${escapeHtml(params.edv.schemaDDV || '')}" placeholder="bcp_ddv_matrizvariables_v" /></td>
             <td>✏️</td>
         </tr>
     `);
 
-    // Row 7: Table Name
+    // Row 6: Schema EDV (nuevo parámetro para escritura)
     rows.push(`
         <tr>
-            <td class="param-name">PRM_TABLE_NAME</td>
+            <td class="param-name">PRM_ESQUEMA_TABLA_EDV <span style="font-size: 0.8em; color: #666;">(escritura)</span></td>
+            <td class="param-value" style="color: #999;">N/A (solo EDV)</td>
+            <td><input type="text" id="edit-schema-edv" value="${escapeHtml(params.edv.schemaEDV || '')}" placeholder="bcp_edv_trdata_012" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 7: Table Name (opcional agregar sufijo)
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_TABLE_NAME <span style="font-size: 0.8em; color: #666;">(+ sufijo opcional)</span></td>
             <td class="param-value">${escapeHtml(params.ddv.tableName || '-')}</td>
-            <td><input type="text" id="edit-table-name" value="${escapeHtml(params.edv.tableName || '')}" /></td>
+            <td><input type="text" id="edit-table-name" value="${escapeHtml(params.edv.tableName || '')}" placeholder="${escapeHtml(params.ddv.tableName || '')}_EDV" /></td>
+            <td>✏️</td>
+        </tr>
+    `);
+
+    // Row 8: Fecha Rutina (opcional)
+    rows.push(`
+        <tr>
+            <td class="param-name">PRM_FECHA_RUTINA <span style="font-size: 0.8em; color: #666;">(opcional)</span></td>
+            <td class="param-value">${escapeHtml(params.ddv.fecha || '-')}</td>
+            <td><input type="date" id="edit-fecha" value="${params.edv.fecha || new Date().toISOString().split('T')[0]}" /></td>
             <td>✏️</td>
         </tr>
     `);
@@ -506,7 +516,8 @@ function extractParamsFromScripts(ddvScript, edvScript) {
             storageAccount: extractParam(ddvScript, 'PRM_STORAGE_ACCOUNT_DDV'),
             catalogDDV: extractParam(ddvScript, 'PRM_CATALOG_NAME'),
             schemaDDV: extractParam(ddvScript, 'PRM_ESQUEMA_TABLA_DDV'),
-            tableName: extractParam(ddvScript, 'PRM_TABLE_NAME')
+            tableName: extractParam(ddvScript, 'PRM_TABLE_NAME'),
+            fecha: extractParam(ddvScript, 'PRM_FECHA_RUTINA')
         },
         edv: {
             container: extractConst(edvScript, 'CONS_CONTAINER_NAME'),
@@ -515,7 +526,8 @@ function extractParamsFromScripts(ddvScript, edvScript) {
             catalogEDV: extractParam(edvScript, 'PRM_CATALOG_NAME_EDV'),
             schemaDDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_DDV'),
             schemaEDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_EDV'),
-            tableName: extractParam(edvScript, 'PRM_TABLE_NAME')
+            tableName: extractParam(edvScript, 'PRM_TABLE_NAME'),
+            fecha: extractParam(edvScript, 'PRM_FECHA_RUTINA')
         }
     };
 }
@@ -554,19 +566,58 @@ function updateManagedTablesInfo() {
 }
 
 function regenerateEDV() {
-    // Get edited values
-    const catalogEDV = document.getElementById('edit-catalog-edv').value;
-    const schemaEDV = document.getElementById('edit-schema-edv').value;
-    const tableName = document.getElementById('edit-table-name').value;
+    // Get all edited values
+    const container = document.getElementById('edit-container')?.value;
+    const storageAccount = document.getElementById('edit-storage')?.value;
+    const catalogDDV = document.getElementById('edit-catalog-ddv')?.value;
+    const catalogEDV = document.getElementById('edit-catalog-edv')?.value;
+    const schemaDDV = document.getElementById('edit-schema-ddv')?.value;
+    const schemaEDV = document.getElementById('edit-schema-edv')?.value;
+    const tableName = document.getElementById('edit-table-name')?.value;
+    const fecha = document.getElementById('edit-fecha')?.value;
 
     // Update script with new values
     let newScript = currentOutputScript;
+    let changes = [];
+
+    if (container) {
+        newScript = newScript.replace(
+            /CONS_CONTAINER_NAME\s*=\s*["'][^'"]+["']/,
+            `CONS_CONTAINER_NAME = "${container}"`
+        );
+        changes.push('CONS_CONTAINER_NAME');
+    }
+
+    if (storageAccount) {
+        newScript = newScript.replace(
+            /PRM_STORAGE_ACCOUNT_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_STORAGE_ACCOUNT_DDV", defaultValue='${storageAccount}'`
+        );
+        changes.push('PRM_STORAGE_ACCOUNT_DDV');
+    }
+
+    if (catalogDDV) {
+        newScript = newScript.replace(
+            /PRM_CATALOG_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_CATALOG_NAME", defaultValue='${catalogDDV}'`
+        );
+        changes.push('PRM_CATALOG_NAME');
+    }
 
     if (catalogEDV) {
         newScript = newScript.replace(
             /PRM_CATALOG_NAME_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
             `PRM_CATALOG_NAME_EDV", defaultValue='${catalogEDV}'`
         );
+        changes.push('PRM_CATALOG_NAME_EDV');
+    }
+
+    if (schemaDDV) {
+        newScript = newScript.replace(
+            /PRM_ESQUEMA_TABLA_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_ESQUEMA_TABLA_DDV", defaultValue='${schemaDDV}'`
+        );
+        changes.push('PRM_ESQUEMA_TABLA_DDV');
     }
 
     if (schemaEDV) {
@@ -574,6 +625,7 @@ function regenerateEDV() {
             /PRM_ESQUEMA_TABLA_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
             `PRM_ESQUEMA_TABLA_EDV", defaultValue='${schemaEDV}'`
         );
+        changes.push('PRM_ESQUEMA_TABLA_EDV');
     }
 
     if (tableName) {
@@ -581,6 +633,15 @@ function regenerateEDV() {
             /PRM_TABLE_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
             `PRM_TABLE_NAME", defaultValue='${tableName}'`
         );
+        changes.push('PRM_TABLE_NAME');
+    }
+
+    if (fecha) {
+        newScript = newScript.replace(
+            /PRM_FECHA_RUTINA["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_FECHA_RUTINA", defaultValue='${fecha}'`
+        );
+        changes.push('PRM_FECHA_RUTINA');
     }
 
     currentOutputScript = newScript;
@@ -592,7 +653,7 @@ function regenerateEDV() {
     validationResult = validator.validate(currentOutputScript);
     updateValidationResults();
 
-    alert('✅ Script EDV re-generado con los nuevos parámetros');
+    alert(`✅ Script EDV re-generado con ${changes.length} cambios:\n${changes.join(', ')}`);
 }
 
 function resetParams() {
