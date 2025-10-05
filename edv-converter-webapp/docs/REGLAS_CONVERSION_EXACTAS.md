@@ -249,6 +249,24 @@ spark.sql(f"DROP TABLE IF EXISTS {PRM_ESQUEMA_TABLA_ESCRITURA}.carpeta2_tmp")
 | 5.1 | Sin cleanPaths | NO existe `cleanPaths(` | ⚠️ Recomendado |
 | 5.2 | Con DROP TABLE | Existe `DROP TABLE IF EXISTS` | ⚠️ Recomendado |
 
+### Nivel 6: Parámetros Opcionales (ADVERTENCIAS)
+
+| # | Check | Validación | Obligatorio |
+|---|-------|------------|-------------|
+| 6.1 | Sufijo en PRM_TABLE_NAME | Tabla tiene sufijo `_EDV`, `_RUBEN`, etc. | ⚠️ Recomendado |
+| 6.2 | PRM_FECHA_RUTINA actualizada | Fecha es reciente (2024+) | ⚠️ Recomendado |
+| 6.3 | Carpeta personalizada | PRM_CARPETA_OUTPUT es de usuario/proyecto | ⚠️ Recomendado |
+
+**Nota:** Estos parámetros son opcionales y dependen del entorno/usuario. El converter NO los cambia automáticamente, pero el validator los detecta y da advertencias.
+
+**Ejemplos de sufijos válidos:**
+- `HM_MATRIZTRANSACCIONCAJERO_EDV`
+- `HM_MATRIZTRANSACCIONCAJERO_RUBEN`
+- `HM_MATRIZTRANSACCIONPOSMACROGIRO_RUBEN_2`
+- `HM_MATRIZTRANSACCIONAGENTE_TEST`
+
+**Razón:** Evitar colisiones con tablas existentes en EDV.
+
 ---
 
 ## 🎯 Score de Compliance

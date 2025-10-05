@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test EDV Converter</title>
+</head>
+<body>
+    <h1>Test de carga de scripts</h1>
+    <div id="status"></div>
+
+    <script>
+        const status = document.getElementById('status');
+
+        // Test 1: edvConverter.js
+        const script1 = document.createElement('script');
+        script1.src = 'edv-converter-webapp/src/utils/edvConverter.js';
+        script1.onload = () => {
+            status.innerHTML += '<p>✅ edvConverter.js cargado</p>';
+            if (typeof EDVConverter !== 'undefined') {
+                status.innerHTML += '<p>✅ EDVConverter class disponible</p>';
+                const converter = new EDVConverter();
+                status.innerHTML += '<p>✅ EDVConverter instanciado</p>';
+            }
+        };
+        script1.onerror = () => {
+            status.innerHTML += '<p>❌ Error cargando edvConverter.js</p>';
+        };
+        document.head.appendChild(script1);
+
+        // Test 2: validatorRiguroso.js
+        const script2 = document.createElement('script');
+        script2.src = 'edv-converter-webapp/src/utils/validatorRiguroso.js';
+        script2.onload = () => {
+            status.innerHTML += '<p>✅ validatorRiguroso.js cargado</p>';
+            if (typeof EDVValidatorRiguroso !== 'undefined') {
+                status.innerHTML += '<p>✅ EDVValidatorRiguroso class disponible</p>';
+                const validator = new EDVValidatorRiguroso();
+                status.innerHTML += '<p>✅ EDVValidatorRiguroso instanciado</p>';
+
+                // Check if methods exist
+                if (typeof validator.validate === 'function') {
+                    status.innerHTML += '<p>✅ validate() method exists</p>';
+                }
+                if (typeof validator.validateContainerName === 'function') {
+                    status.innerHTML += '<p>✅ validateContainerName() method exists</p>';
+                }
+                if (typeof validator.validateWidgetCatalogEDV === 'function') {
+                    status.innerHTML += '<p>✅ validateWidgetCatalogEDV() method exists</p>';
+                }
+            }
+        };
+        script2.onerror = () => {
+            status.innerHTML += '<p>❌ Error cargando validatorRiguroso.js</p>';
+        };
+        document.head.appendChild(script2);
+
+        // Test 3: app.js
+        setTimeout(() => {
+            const script3 = document.createElement('script');
+            script3.src = 'edv-converter-webapp/src/app.js';
+            script3.onload = () => {
+                status.innerHTML += '<p>✅ app.js cargado</p>';
+            };
+            script3.onerror = () => {
+                status.innerHTML += '<p>❌ Error cargando app.js</p>';
+            };
+            document.head.appendChild(script3);
+        }, 1000);
+    </script>
+</body>
+</html>

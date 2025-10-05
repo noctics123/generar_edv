@@ -76,4 +76,22 @@ tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.{nombre_tabla_tmp}'.lower()
 df.write.saveAsTable(tmp_table, ...)
 ```
 
+## 7. Uso de Tablas Administradas (Managed Tables)
+
+Un cambio fundamental en la versión EDV es cómo se guardan las tablas. Todas las tablas, tanto finales como temporales, deben crearse como **tablas administradas** para asegurar que el ciclo de vida de los datos sea gestionado por Databricks.
+
+Esto se logra eliminando el argumento `path` de la función `.saveAsTable()`.
+
+*   **Lógica Original (Tabla Externa/No Administrada):** Se especifica una ruta (`path`), lo que hace que Databricks solo gestione los metadatos. Los datos físicos permanecen si la tabla se elimina.
+    ```python
+    df.write.mode("overwrite").saveAsTable("nombre_tabla", path="abfss://...")
+    ```
+
+*   **Lógica Nueva (Tabla Administrada):** No se especifica una ruta. Databricks gestiona tanto los metadatos como los datos físicos. Si la tabla se elimina, los datos también se eliminan.
+    ```python
+    df.write.mode("overwrite").saveAsTable("nombre_tabla")
+    ```
+
+Este enfoque es crucial para la gobernanza de datos en EDV, ya que previene la acumulación de datos huérfanos.
+
 Este es el patrón general. Al seguir estos pasos, cualquier script puede ser adaptado para ejecutarse en el entorno EDV, garantizando la separación de datos y la correcta canalización de los resultados.

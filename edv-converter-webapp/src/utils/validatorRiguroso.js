@@ -52,6 +52,9 @@ class EDVValidatorRiguroso {
         // NIVEL 5: Limpieza (Bonus +5)
         if (this.validateCleanup(script)) this.score += 5;
 
+        // NIVEL 6: Parámetros Opcionales (Advertencias - No afectan score)
+        this.validateOptionalParameters(script);
+
         return {
             passed: this.score >= 90,
             checks: this.checks,
@@ -525,6 +528,87 @@ class EDVValidatorRiguroso {
             this.warnings.push('Reemplazar cleanPaths por DROP TABLE IF EXISTS');
         }
         return false;
+    }
+
+    // ========== NIVEL 6: PARÁMETROS OPCIONALES (ADVERTENCIAS) ==========
+
+    validateOptionalParameters(script) {
+        // Advertencia: PRM_TABLE_NAME debería tener sufijo para evitar colisiones
+        const tableNamePattern = /dbutils\.widgets\.text\(\s*name\s*=\s*["']PRM_TABLE_NAME["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
+        const tableNameMatch = script.match(tableNamePattern);
+
+        if (tableNameMatch) {
+            const tableName = tableNameMatch[1];
+            const hasSuffix = /_EDV|_RUBEN|_TEST|_PROD|_[A-Z]+_\d+/i.test(tableName);
+
+            if (!hasSuffix) {
+                this.checks.push({
+                    level: 'RECOMENDADO',
+                    name: '6.1 Sufijo en PRM_TABLE_NAME',
+                    passed: false,
+                    points: 0,
+                    message: `⚠️ Considera agregar sufijo a "${tableName}" (ej: ${tableName}_EDV) para evitar colisiones`
+                });
+                this.warnings.push(`PRM_TABLE_NAME sin sufijo: "${tableName}". Considera agregar _EDV, _RUBEN, etc.`);
+            } else {
+                this.checks.push({
+                    level: 'RECOMENDADO',
+                    name: '6.1 Sufijo en PRM_TABLE_NAME',
+                    passed: true,
+                    points: 0,
+                    message: `✅ PRM_TABLE_NAME tiene sufijo: ${tableName}`
+                });
+            }
+        }
+
+        // Advertencia: PRM_FECHA_RUTINA debería actualizarse
+        const fechaPattern = /dbutils\.widgets\.text\(\s*name\s*=\s*["']PRM_FECHA_RUTINA["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
+        const fechaMatch = script.match(fechaPattern);
+
+        if (fechaMatch) {
+            const fecha = fechaMatch[1];
+            const year = parseInt(fecha.split('-')[0]);
+            const currentYear = new Date().getFullYear();
+
+            if (year < 2024 || year > currentYear + 1) {
+                this.checks.push({
+                    level: 'RECOMENDADO',
+                    name: '6.2 PRM_FECHA_RUTINA actualizada',
+                    passed: false,
+                    points: 0,
+                    message: `⚠️ PRM_FECHA_RUTINA parece antigua: ${fecha}. Actualizar a fecha reciente`
+                });
+                this.warnings.push(`PRM_FECHA_RUTINA="${fecha}" parece antigua. Actualizar a fecha de ejecución.`);
+            } else {
+                this.checks.push({
+                    level: 'RECOMENDADO',
+                    name: '6.2 PRM_FECHA_RUTINA actualizada',
+                    passed: true,
+                    points: 0,
+                    message: `✅ PRM_FECHA_RUTINA reciente: ${fecha}`
+                });
+            }
+        }
+
+        // Advertencia: PRM_CARPETA_OUTPUT debería ser de usuario
+        const carpetaPattern = /dbutils\.widgets\.text\(\s*name\s*=\s*["']PRM_CARPETA_OUTPUT["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
+        const carpetaMatch = script.match(carpetaPattern);
+
+        if (carpetaMatch) {
+            const carpeta = carpetaMatch[1];
+            const hasUserFolder = /RUBEN|PEDRO|TEST|DEUDA_TECNICA/i.test(carpeta);
+
+            if (carpeta.includes('desa/bcp/ddv') && !hasUserFolder) {
+                this.checks.push({
+                    level: 'RECOMENDADO',
+                    name: '6.3 Carpeta de trabajo personalizada',
+                    passed: false,
+                    points: 0,
+                    message: `⚠️ PRM_CARPETA_OUTPUT usa carpeta por defecto. Considera usar carpeta personal`
+                });
+                this.warnings.push(`PRM_CARPETA_OUTPUT="${carpeta}" usa carpeta por defecto. Personalizar con nombre de usuario/proyecto.`);
+            }
+        }
     }
 
     // ========== UTILIDADES ==========
