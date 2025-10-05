@@ -206,37 +206,9 @@ function updateValidationResults() {
 
     // Update checklist tab
     updateChecklistTab();
-}
-
-function updateLogTab() {
-    // Changes
-    const changesEl = document.getElementById('log-changes');
-    if (conversionResult.log.length === 0) {
-        changesEl.innerHTML = '<div class="log-empty">No hay cambios registrados</div>';
-    } else {
-        changesEl.innerHTML = conversionResult.log
-            .map(log => `<div class="log-item">${escapeHtml(log)}</div>`)
-            .join('');
-    }
-
-    // Warnings
-    const warningsEl = document.getElementById('log-warnings');
-    if (conversionResult.warnings.length === 0) {
-        warningsEl.innerHTML = '<div class="log-empty">No hay advertencias</div>';
-    } else {
-        warningsEl.innerHTML = conversionResult.warnings
-            .map(warning => `<div class="log-item">⚠️ ${escapeHtml(warning)}</div>`)
-            .join('');
-    }
-
-    // Errors
-    const errorsEl = document.getElementById('log-errors');
-    if (validationResult.errors.length === 0) {
-        errorsEl.innerHTML = '<div class="log-empty">No hay errores</div>';
-    } else {
-        errorsEl.innerHTML = validationResult.errors
-            .map(error => `<div class="log-item">❌ ${escapeHtml(error)}</div>`)
-            .join('');
+    // Update parameters tab (if present)
+    if (document.getElementById('params-container')) {
+        updateParamsTab();
     }
 }
 
@@ -391,16 +363,21 @@ console.log('📚 Atajos: Ctrl+Enter (convertir), Ctrl+S (descargar)');
 
 
 function updateParamsTab() {
-    const el = document.getElementById('params-container');
+    const el = document.getElementById("params-container");
+    if (!el) return;
     if (!validationResult || !validationResult.parameters) {
-        el.innerHTML = '<div class="log-empty">No hay parámetros</div>';
+        el.innerHTML = "<div class=\"log-empty\">No hay parámetros</div>";
         return;
     }
     const p = validationResult.parameters;
+    const esc = (v) => escapeHtml(String(v ?? "-"));
     const rows = [];
-    rows.push(<div class="log-item"><strong>DDV</strong>: catalog=, schema=</div>);
-    rows.push(<div class="log-item"><strong>EDV</strong>: catalog=, schema=</div>);
-    rows.push(<div class="log-item"><strong>Destino</strong>: table_name=, tabla_segunda=, tmp=, familia=</div>);
-    rows.push(<div class="log-item"><strong>Storage</strong>: container=</div>);
-    el.innerHTML = rows.join('');
+    rows.push("<div class=\"log-item\"><strong>DDV</strong>: catalog=" + esc(p.ddv?.catalog) + ", schema=" + esc(p.ddv?.schema) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>EDV</strong>: catalog=" + esc(p.edv?.catalog) + ", schema=" + esc(p.edv?.schema) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>Destino</strong>: table_name=" + esc(p.destino?.table_name) + ", tabla_segunda=" + esc(p.destino?.tabla_segunda) + ", tmp=" + esc(p.destino?.tabla_segunda_tmp) + ", familia=" + esc(p.destino?.familia) + "</div>");
+    rows.push("<div class=\"log-item\"><strong>Storage</strong>: container=" + esc(p.storage?.container) + "</div>");
+    el.innerHTML = rows.join("");
 }
+
+
+
