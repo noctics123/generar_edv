@@ -75,22 +75,23 @@ class EDVConverter {
 
     /**
      * Refuerza actualizacion de VAL_DESTINO_NAME para esquemas EDV (casos generales)
+     * Aplica sufijo a la tabla final
      */
     fixDestinationName(script) {
-        // PRM_TABLE_NAME
+        // PRM_TABLE_NAME con sufijo
         script = script.replace(
             /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLE_NAME/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME'
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME + "_" + PRM_SUFIJO_TABLA'
         );
-        // PRM_TABLA_SEGUNDATRANSPUESTA
+        // PRM_TABLA_SEGUNDATRANSPUESTA con sufijo
         script = script.replace(
             /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*PRM_TABLA_SEGUNDATRANSPUESTA/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA'
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLA_SEGUNDATRANSPUESTA + "_" + PRM_SUFIJO_TABLA'
         );
-        // Captura generica de variable a la derecha
+        // Captura generica de variable a la derecha con sufijo
         script = script.replace(
             /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\."\s*\+\s*(\w+)/g,
-            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1'
+            'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + $1 + "_" + PRM_SUFIJO_TABLA'
         );
         return script;
     }
@@ -128,6 +129,27 @@ class EDVConverter {
     }
 
     /**
+     * Aplica sufijo (PRM_SUFIJO_TABLA) a nombres de tablas temporales
+     * Modifica: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.nombre_tmp'
+     * A: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.nombre_tmp_{PRM_SUFIJO_TABLA}'
+     */
+    applySufijoToTempTables(script) {
+        // Patrón: tmp_table = f'{PRM_ESQUEMA_TABLA_ESCRITURA}.XXX_tmp'
+        const tmpPattern = /(tmp_table\w*)\s*=\s*f['"](\{PRM_ESQUEMA_TABLA_ESCRITURA\}\.[\w]+_tmp)['"]/g;
+
+        const updated = script.replace(tmpPattern, (match, varName, tablePath) => {
+            // Insertar sufijo antes del cierre de comilla
+            return `${varName} = f'${tablePath}_{PRM_SUFIJO_TABLA}'`;
+        });
+
+        if (updated !== script) {
+            this.conversionLog.push('✅ Sufijo PRM_SUFIJO_TABLA aplicado a tablas temporales');
+        }
+
+        return updated;
+    }
+
+    /**
      * Convierte un script DDV a EDV
      * @param {string} ddvScript - Código del script DDV
      * @returns {Object} - { edvScript: string, log: array, warnings: array }
@@ -162,6 +184,8 @@ class EDVConverter {
         // Refuerzos para temporales: reasignar tmp_table(s) al esquema EDV y reemplazar lecturas inline de rutas
         edvScript = this.updateTmpAssignmentsToEDV(edvScript);
         edvScript = this.replaceInlineTempLoads(edvScript);
+        // Aplicar sufijo a tablas temporales
+        edvScript = this.applySufijoToTempTables(edvScript);
 
         // 5. Agregar optimizaciones Spark
         edvScript = this.addSparkOptimizations(edvScript);
@@ -252,6 +276,7 @@ dbutils.widgets.removeAll()
 
         const edvWidgets = `dbutils.widgets.text(name="PRM_CATALOG_NAME_EDV", defaultValue='catalog_lhcl_prod_bcp_expl')
 dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_012')
+dbutils.widgets.text(name="PRM_SUFIJO_TABLA", defaultValue='RUBEN')
 `;
 
         // Buscar PRM_TABLA_PARAM_GRUPO (último widget común) para insertar después
@@ -295,6 +320,7 @@ dbutils.widgets.text(name="PRM_ESQUEMA_TABLA_EDV", defaultValue='bcp_edv_trdata_
 
         const edvVarsCode = `PRM_CATALOG_NAME_EDV = dbutils.widgets.get("PRM_CATALOG_NAME_EDV")
 PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
+PRM_SUFIJO_TABLA = dbutils.widgets.get("PRM_SUFIJO_TABLA")
 `;
 
         // Buscar PRM_TABLA_PARAM_GRUPO get (último común)
@@ -352,14 +378,14 @@ PRM_ESQUEMA_TABLA_EDV = dbutils.widgets.get("PRM_ESQUEMA_TABLA_EDV")
             // Insertar después de PRM_ESQUEMA_TABLA
             script = script.slice(0, insertPos) + edvSchemaCode + script.slice(insertPos);
 
-            // Actualizar VAL_DESTINO_NAME
+            // Actualizar VAL_DESTINO_NAME con sufijo
             script = script.replace(
                 /VAL_DESTINO_NAME\s*=\s*PRM_ESQUEMA_TABLA\s*\+\s*"\.".*PRM_TABLE_NAME/,
-                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME'
+                'VAL_DESTINO_NAME = PRM_ESQUEMA_TABLA_ESCRITURA + "." + PRM_TABLE_NAME + "_" + PRM_SUFIJO_TABLA'
             );
 
             this.conversionLog.push('✅ PRM_ESQUEMA_TABLA_ESCRITURA agregado');
-            this.conversionLog.push('✅ VAL_DESTINO_NAME actualizado para EDV');
+            this.conversionLog.push('✅ VAL_DESTINO_NAME actualizado para EDV con sufijo PRM_SUFIJO_TABLA');
         } else {
             this.warnings.push('⚠️  No se encontró PRM_ESQUEMA_TABLA. Verificar manualmente.');
         }
