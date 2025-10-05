@@ -13,6 +13,67 @@ class EDVConverter {
     }
 
     /**
+     * CRÍTICO: Actualiza CONS_CONTAINER_NAME de lhcldata a bcp-edv-trdata-012
+     * Basado en conversiones reales DDV→EDV
+     */
+    updateContainerName(script) {
+        const oldContainer = 'abfss://lhcldata@';
+        const newContainer = 'abfss://bcp-edv-trdata-012@';
+
+        if (script.includes(oldContainer)) {
+            script = script.replace(
+                /CONS_CONTAINER_NAME\s*=\s*["']abfss:\/\/lhcldata@["']/g,
+                `CONS_CONTAINER_NAME = "${newContainer}"`
+            );
+            this.conversionLog.push(`✅ Container actualizado: lhcldata → bcp-edv-trdata-012`);
+        } else if (script.includes(newContainer)) {
+            this.warnings.push('Container ya está actualizado a EDV');
+        }
+
+        return script;
+    }
+
+    /**
+     * CRÍTICO: Actualiza PRM_STORAGE_ACCOUNT_DDV de desarrollo (d03) a producción (p05)
+     * Basado en conversiones reales DDV→EDV
+     */
+    updateStorageAccount(script) {
+        const pattern = /dbutils\.widgets\.text\(name=["']PRM_STORAGE_ACCOUNT_DDV["'],\s*defaultValue=["']adlscu1lhclbackd\d+["']\)/;
+
+        if (pattern.test(script)) {
+            script = script.replace(
+                pattern,
+                `dbutils.widgets.text(name="PRM_STORAGE_ACCOUNT_DDV", defaultValue='adlscu1lhclbackp05')`
+            );
+            this.conversionLog.push(`✅ Storage account actualizado: desarrollo (d0X) → producción (p05)`);
+        } else if (script.includes('adlscu1lhclbackp05')) {
+            this.warnings.push('Storage account ya está en producción (p05)');
+        }
+
+        return script;
+    }
+
+    /**
+     * CRÍTICO: Actualiza PRM_CATALOG_NAME de desarrollo (desa) a producción (prod)
+     * Basado en conversiones reales DDV→EDV
+     */
+    updateCatalogName(script) {
+        const pattern = /dbutils\.widgets\.text\(name=["']PRM_CATALOG_NAME["'],\s*defaultValue=["']catalog_lhcl_desa_bcp["']\)/;
+
+        if (pattern.test(script)) {
+            script = script.replace(
+                pattern,
+                `dbutils.widgets.text(name="PRM_CATALOG_NAME", defaultValue='catalog_lhcl_prod_bcp')`
+            );
+            this.conversionLog.push(`✅ Catalog actualizado: catalog_lhcl_desa_bcp → catalog_lhcl_prod_bcp`);
+        } else if (script.includes('catalog_lhcl_prod_bcp')) {
+            this.warnings.push('Catalog ya está en producción (prod_bcp)');
+        }
+
+        return script;
+    }
+
+    /**
      * Refuerza actualizacion de VAL_DESTINO_NAME para esquemas EDV (casos generales)
      */
     fixDestinationName(script) {
@@ -76,6 +137,11 @@ class EDVConverter {
         this.warnings = [];
 
         let edvScript = ddvScript;
+
+        // 0. CRÍTICO: Actualizar constantes y parámetros de ambiente (DDV → EDV)
+        edvScript = this.updateContainerName(edvScript);
+        edvScript = this.updateStorageAccount(edvScript);
+        edvScript = this.updateCatalogName(edvScript);
 
         // 1. Agregar widgets EDV
         edvScript = this.addEDVWidgets(edvScript);

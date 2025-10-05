@@ -23,6 +23,11 @@ class EDVValidatorRiguroso {
         this.warnings = [];
         this.score = 0;
 
+        // NIVEL 0: Ambiente EDV (CRÍTICO - validaciones sin puntos, pero obligatorias)
+        this.validateContainerName(script);
+        this.validateStorageAccount(script);
+        this.validateCatalogName(script);
+
         // NIVEL 1: Parámetros EDV (90 puntos - CRÍTICO)
         this.validateWidgetCatalogEDV(script);      // 15pts
         this.validateWidgetSchemaEDV(script);       // 15pts
@@ -55,6 +60,98 @@ class EDVValidatorRiguroso {
             score: Math.min(this.score, 100),
             level: this.getComplianceLevel()
         };
+    }
+
+    // ========== NIVEL 0: AMBIENTE EDV (CRÍTICOS) ==========
+
+    validateContainerName(script) {
+        const correctContainer = 'abfss://bcp-edv-trdata-012@';
+        const wrongContainer = 'abfss://lhcldata@';
+
+        const hasCorrect = script.includes(correctContainer);
+        const hasWrong = script.includes(wrongContainer);
+
+        if (hasCorrect && !hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.1 Container EDV',
+                passed: true,
+                points: 0,
+                message: `✅ CONS_CONTAINER_NAME correcto: ${correctContainer}`
+            });
+        } else if (hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.1 Container EDV',
+                passed: false,
+                points: 0,
+                message: `❌ CONS_CONTAINER_NAME INCORRECTO - debe ser: ${correctContainer}`
+            });
+            this.errors.push(`Container name debe ser "${correctContainer}" (no "lhcldata@")`);
+            this.score -= 20; // Penalización grave
+        } else {
+            this.warnings.push('No se detectó CONS_CONTAINER_NAME');
+        }
+    }
+
+    validateStorageAccount(script) {
+        const correctAccount = 'adlscu1lhclbackp05';
+        const wrongPattern = /adlscu1lhclbackd\d+/;
+
+        const hasCorrect = script.includes(correctAccount);
+        const hasWrong = wrongPattern.test(script);
+
+        if (hasCorrect && !hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.2 Storage Account Producción',
+                passed: true,
+                points: 0,
+                message: `✅ PRM_STORAGE_ACCOUNT_DDV correcto: ${correctAccount}`
+            });
+        } else if (hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.2 Storage Account Producción',
+                passed: false,
+                points: 0,
+                message: `❌ PRM_STORAGE_ACCOUNT_DDV es desarrollo (d0X) - debe ser producción: ${correctAccount}`
+            });
+            this.errors.push(`Storage account debe ser "${correctAccount}" (producción, no desarrollo)`);
+            this.score -= 20; // Penalización grave
+        } else {
+            this.warnings.push('No se detectó PRM_STORAGE_ACCOUNT_DDV');
+        }
+    }
+
+    validateCatalogName(script) {
+        const correctCatalog = 'catalog_lhcl_prod_bcp';
+        const wrongCatalog = 'catalog_lhcl_desa_bcp';
+
+        const hasCorrect = script.includes(correctCatalog);
+        const hasWrong = script.includes(wrongCatalog);
+
+        if (hasCorrect && !hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.3 Catalog Producción',
+                passed: true,
+                points: 0,
+                message: `✅ PRM_CATALOG_NAME correcto: ${correctCatalog}`
+            });
+        } else if (hasWrong) {
+            this.checks.push({
+                level: 'CRÍTICO',
+                name: '0.3 Catalog Producción',
+                passed: false,
+                points: 0,
+                message: `❌ PRM_CATALOG_NAME es desarrollo (desa) - debe ser producción: ${correctCatalog}`
+            });
+            this.errors.push(`Catalog debe ser "${correctCatalog}" (no "desa_bcp")`);
+            this.score -= 20; // Penalización grave
+        } else {
+            this.warnings.push('No se detectó PRM_CATALOG_NAME');
+        }
     }
 
     // ========== NIVEL 1: PARÁMETROS EDV (CRÍTICOS) ==========
