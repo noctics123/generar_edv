@@ -6,7 +6,12 @@
       "Bash(more:*)",
       "Bash(git init:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: BCP Matrix Transaction Scripts con optimizaciones aplicadas\n\n- Scripts de matriz de transacciones para Agente, Cajero y POS (DDV y EDV)\n- 6 optimizaciones de rendimiento aplicadas (AQE, cache, storage level, loops, repartition)\n- Documentación completa de conversión DDV a EDV (CLAUDE.md)\n- Análisis comparativos y correcciones finales aplicadas\n- Mejora de rendimiento: 2-5x más rápido\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
