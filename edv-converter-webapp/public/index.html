@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDV Converter - BCP Analytics</title>
+    <meta name="description" content="Conversor automático de scripts DDV a EDV para BCP Analytics">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/main.css">
+    <link rel="stylesheet" href="../src/styles/diff.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.ico">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <h1>🚀 EDV Converter</h1>
+                    <p>BCP Analytics - DDV to EDV Transformation</p>
+                </div>
+                <nav class="nav">
+                    <a href="https://github.com/noctics123/generar_edv" target="_blank" class="nav-link">
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                        </svg>
+                        GitHub
+                    </a>
+                    <a href="../docs/GUIA_USO.md" class="nav-link">📚 Docs</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+
+            <!-- Instructions Banner -->
+            <div class="banner">
+                <h2>📋 Instrucciones</h2>
+                <ol>
+                    <li>Selecciona un script DDV (.py) o pega el código</li>
+                    <li>Haz clic en "Convertir a EDV"</li>
+                    <li>Revisa el diff y el checklist de validación</li>
+                    <li>Descarga el script EDV generado</li>
+                </ol>
+            </div>
+
+            <!-- Input Section -->
+            <section class="section">
+                <h2>🔼 1. Cargar Script DDV</h2>
+
+                <div class="input-methods">
+                    <!-- File Upload -->
+                    <div class="input-method">
+                        <label for="file-upload" class="upload-label">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Cargar archivo .py</span>
+                        </label>
+                        <input type="file" id="file-upload" accept=".py" hidden>
+                        <p class="file-name" id="file-name">Ningún archivo seleccionado</p>
+                    </div>
+
+                    <!-- Examples -->
+                    <div class="input-method">
+                        <label>📂 O usar un ejemplo:</label>
+                        <div class="example-buttons">
+                            <button class="btn btn-secondary" data-example="agente">Agente</button>
+                            <button class="btn btn-secondary" data-example="cajero">Cajero</button>
+                            <button class="btn btn-secondary" data-example="macrogiro">Macrogiro</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Editor -->
+                <div class="editor-container">
+                    <div class="editor-header">
+                        <span>Script DDV (entrada)</span>
+                        <button class="btn btn-sm" id="clear-input">🗑️ Limpiar</button>
+                    </div>
+                    <textarea id="input-script" class="code-editor" placeholder="Pega tu script DDV aquí o carga un archivo..."></textarea>
+                    <div class="editor-footer">
+                        <span id="input-lines">0 líneas</span>
+                        <span id="input-size">0 KB</span>
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <div class="action-buttons">
+                    <button id="convert-btn" class="btn btn-primary btn-large">
+                        ⚡ Convertir a EDV
+                    </button>
+                </div>
+            </section>
+
+            <!-- Output Section (Hidden by default) -->
+            <section class="section" id="output-section" style="display: none;">
+                <h2>🔽 2. Script EDV Generado</h2>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-changes">0</div>
+                        <div class="stat-label">Cambios aplicados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-warnings">0</div>
+                        <div class="stat-label">Advertencias</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-score">0%</div>
+                        <div class="stat-label">Compliance Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-status">-</div>
+                        <div class="stat-label">Estado</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="diff">📊 Diff</button>
+                    <button class="tab" data-tab="output">📄 Script EDV</button>
+                    <button class="tab" data-tab="checklist">✅ Checklist</button>
+                    <button class="tab" data-tab="log">📝 Log</button>
+                </div>
+
+                <!-- Tab Content: Diff -->
+                <div class="tab-content active" id="tab-diff">
+                    <div class="diff-container">
+                        <div class="diff-header">
+                            <div class="diff-label">❌ ANTES (DDV)</div>
+                            <div class="diff-label">✅ DESPUÉS (EDV)</div>
+                        </div>
+                        <div class="diff-viewer" id="diff-viewer">
+                            <div class="diff-before" id="diff-before"></div>
+                            <div class="diff-after" id="diff-after"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Output Script -->
+                <div class="tab-content" id="tab-output">
+                    <div class="editor-container">
+                        <div class="editor-header">
+                            <span>Script EDV (salida)</span>
+                            <div>
+                                <button class="btn btn-sm" id="copy-output">📋 Copiar</button>
+                                <button class="btn btn-sm btn-primary" id="download-output">💾 Descargar</button>
+                            </div>
+                        </div>
+                        <textarea id="output-script" class="code-editor" readonly></textarea>
+                        <div class="editor-footer">
+                            <span id="output-lines">0 líneas</span>
+                            <span id="output-size">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Checklist -->
+                <div class="tab-content" id="tab-checklist">
+                    <div class="checklist" id="checklist-container">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Tab Content: Log -->
+                <div class="tab-content" id="tab-log">
+                    <div class="log-container">
+                        <h3>📋 Cambios Aplicados</h3>
+                        <div class="log-list" id="log-changes"></div>
+
+                        <h3>⚠️ Advertencias</h3>
+                        <div class="log-list" id="log-warnings"></div>
+
+                        <h3>❌ Errores</h3>
+                        <div class="log-list" id="log-errors"></div>
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 BCP Analytics | Generado con Claude Code | <a href="https://github.com/noctics123/generar_edv">GitHub</a></p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../src/utils/edvConverter.js"></script>
+    <script src="../src/utils/validator.js"></script>
+    <script src="../src/app.js"></script>
+</body>
+</html>

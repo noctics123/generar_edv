@@ -1,0 +1,37 @@
+{
+  "name": "edv-converter-webapp",
+  "version": "1.0.0",
+  "description": "Aplicación web para convertir scripts PySpark DDV a EDV para BCP Analytics",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "npx http-server public -p 8080 -o",
+    "dev": "npx http-server public -p 8080 -o -c-1",
+    "build": "echo 'No build needed - static site'",
+    "test": "echo 'Tests to be implemented'",
+    "deploy": "gh-pages -d public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/noctics123/generar_edv.git"
+  },
+  "keywords": [
+    "edv",
+    "ddv",
+    "pyspark",
+    "databricks",
+    "bcp",
+    "analytics",
+    "converter",
+    "transformation"
+  ],
+  "author": "BCP Analytics Team",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^6.1.0",
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}
