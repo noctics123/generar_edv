@@ -13,7 +13,8 @@
       "Bash(git pull:*)",
       "Bash(git commit:*)",
       "Bash(dir:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(start chrome:*)"
     ],
     "deny": [],
     "ask": []
