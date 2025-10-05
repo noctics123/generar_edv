@@ -122,27 +122,29 @@ function clearInput() {
 }
 
 // ===== STATS =====
+/**
+ * Generic function to update script statistics (lines and size)
+ * @param {string} script - Script content
+ * @param {string} linesElementId - Element ID for lines display
+ * @param {string} sizeElementId - Element ID for size display
+ */
+function updateStats(script, linesElementId, sizeElementId) {
+    const lines = script.split('\n').length;
+    const bytes = new Blob([script]).size;
+    const kb = (bytes / 1024).toFixed(2);
+
+    document.getElementById(linesElementId).textContent = `${lines} líneas`;
+    document.getElementById(sizeElementId).textContent = `${kb} KB`;
+}
+
 function updateInputStats() {
     const script = document.getElementById('input-script').value;
     currentInputScript = script;
-
-    const lines = script.split('\n').length;
-    const bytes = new Blob([script]).size;
-    const kb = (bytes / 1024).toFixed(2);
-
-    document.getElementById('input-lines').textContent = `${lines} líneas`;
-    document.getElementById('input-size').textContent = `${kb} KB`;
+    updateStats(script, 'input-lines', 'input-size');
 }
 
 function updateOutputStats() {
-    const script = currentOutputScript;
-
-    const lines = script.split('\n').length;
-    const bytes = new Blob([script]).size;
-    const kb = (bytes / 1024).toFixed(2);
-
-    document.getElementById('output-lines').textContent = `${lines} líneas`;
-    document.getElementById('output-size').textContent = `${kb} KB`;
+    updateStats(currentOutputScript, 'output-lines', 'output-size');
 }
 
 // ===== CONVERSION =====
@@ -376,25 +378,34 @@ function copyOutput() {
     console.log('📋 Script copiado al portapapeles');
 }
 
-function downloadOutput() {
-    if (!currentOutputScript) {
+/**
+ * Detect script type based on content patterns
+ * @returns {string} Script base filename (without extension)
+ */
+function detectScriptType() {
+    if (currentInputScript.includes('MATRIZTRANSACCIONAGENTE')) {
+        return 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONAGENTE_EDV';
+    } else if (currentInputScript.includes('MATRIZTRANSACCIONCAJERO')) {
+        return 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONCAJERO_EDV';
+    } else if (currentInputScript.includes('MATRIZTRANSACCIONPOSMACROGIRO')) {
+        return 'HM_MATRIZTRANSACCIONPOSMACROGIRO_EDV';
+    }
+    return 'script_edv';
+}
+
+/**
+ * Generic file download function
+ * @param {string} content - File content
+ * @param {string} extension - File extension (py, txt, etc.)
+ */
+function downloadFile(content, extension) {
+    if (!content) {
         alert('⚠️ No hay script para descargar');
         return;
     }
 
-    // Detect script type from original filename or content
-    let filename = 'script_edv.py';
-
-    if (currentInputScript.includes('MATRIZTRANSACCIONAGENTE')) {
-        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONAGENTE_EDV.py';
-    } else if (currentInputScript.includes('MATRIZTRANSACCIONCAJERO')) {
-        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONCAJERO_EDV.py';
-    } else if (currentInputScript.includes('MATRIZTRANSACCIONPOSMACROGIRO')) {
-        filename = 'HM_MATRIZTRANSACCIONPOSMACROGIRO_EDV.py';
-    }
-
-    // Create blob and download
-    const blob = new Blob([currentOutputScript], { type: 'text/plain' });
+    const filename = `${detectScriptType()}.${extension}`;
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -403,6 +414,10 @@ function downloadOutput() {
     URL.revokeObjectURL(url);
 
     console.log(`💾 Script descargado: ${filename}`);
+}
+
+function downloadOutput() {
+    downloadFile(currentOutputScript, 'py');
 }
 
 // ===== UTILITIES =====
@@ -509,38 +524,55 @@ function updateParamsTable() {
     tbody.innerHTML = rows.join('');
 }
 
+/**
+ * Utility: Extract parameter value from script using regex
+ * @param {string} script - Script content
+ * @param {string} name - Parameter/constant name
+ * @param {string} type - Type: 'param' (dbutils.widgets) or 'const' (variable assignment)
+ * @returns {string|null} Extracted value or null if not found
+ */
+function extractValue(script, name, type = 'param') {
+    const pattern = type === 'const'
+        ? new RegExp(`${name}\\s*=\\s*['"]([^'"]+)['"]`)
+        : new RegExp(`${name}.*?defaultValue\\s*=\\s*['"]([^'"]+)['"]`);
+    const match = script.match(pattern);
+    return match ? match[1] : null;
+}
+
 function extractParamsFromScripts(ddvScript, edvScript) {
-    const extractParam = (script, param) => {
-        const pattern = new RegExp(`${param}.*?defaultValue\\s*=\\s*['"]([^'"]+)['"]`);
-        const match = script.match(pattern);
-        return match ? match[1] : null;
+    const paramNames = {
+        const: ['CONS_CONTAINER_NAME'],
+        param: ['PRM_STORAGE_ACCOUNT_DDV', 'PRM_CATALOG_NAME', 'PRM_ESQUEMA_TABLA_DDV', 'PRM_TABLE_NAME', 'PRM_FECHA_RUTINA']
     };
 
-    const extractConst = (script, constName) => {
-        const pattern = new RegExp(`${constName}\\s*=\\s*['"]([^'"]+)['"]`);
-        const match = script.match(pattern);
-        return match ? match[1] : null;
+    const extractFromScript = (script, includeEDVParams = false) => {
+        const result = {};
+
+        // Extract constants
+        paramNames.const.forEach(name => {
+            const key = name === 'CONS_CONTAINER_NAME' ? 'container' : name;
+            result[key] = extractValue(script, name, 'const');
+        });
+
+        // Extract parameters
+        result.storageAccount = extractValue(script, 'PRM_STORAGE_ACCOUNT_DDV');
+        result.catalogDDV = extractValue(script, 'PRM_CATALOG_NAME');
+        result.schemaDDV = extractValue(script, 'PRM_ESQUEMA_TABLA_DDV');
+        result.tableName = extractValue(script, 'PRM_TABLE_NAME');
+        result.fecha = extractValue(script, 'PRM_FECHA_RUTINA');
+
+        // EDV-specific parameters
+        if (includeEDVParams) {
+            result.catalogEDV = extractValue(script, 'PRM_CATALOG_NAME_EDV');
+            result.schemaEDV = extractValue(script, 'PRM_ESQUEMA_TABLA_EDV');
+        }
+
+        return result;
     };
 
     return {
-        ddv: {
-            container: extractConst(ddvScript, 'CONS_CONTAINER_NAME'),
-            storageAccount: extractParam(ddvScript, 'PRM_STORAGE_ACCOUNT_DDV'),
-            catalogDDV: extractParam(ddvScript, 'PRM_CATALOG_NAME'),
-            schemaDDV: extractParam(ddvScript, 'PRM_ESQUEMA_TABLA_DDV'),
-            tableName: extractParam(ddvScript, 'PRM_TABLE_NAME'),
-            fecha: extractParam(ddvScript, 'PRM_FECHA_RUTINA')
-        },
-        edv: {
-            container: extractConst(edvScript, 'CONS_CONTAINER_NAME'),
-            storageAccount: extractParam(edvScript, 'PRM_STORAGE_ACCOUNT_DDV'),
-            catalogDDV: extractParam(edvScript, 'PRM_CATALOG_NAME'),
-            catalogEDV: extractParam(edvScript, 'PRM_CATALOG_NAME_EDV'),
-            schemaDDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_DDV'),
-            schemaEDV: extractParam(edvScript, 'PRM_ESQUEMA_TABLA_EDV'),
-            tableName: extractParam(edvScript, 'PRM_TABLE_NAME'),
-            fecha: extractParam(edvScript, 'PRM_FECHA_RUTINA')
-        }
+        ddv: extractFromScript(ddvScript, false),
+        edv: extractFromScript(edvScript, true)
     };
 }
 
@@ -578,83 +610,68 @@ function updateManagedTablesInfo() {
 }
 
 function regenerateEDV() {
-    // Get all edited values
-    const container = document.getElementById('edit-container')?.value;
-    const storageAccount = document.getElementById('edit-storage')?.value;
-    const catalogDDV = document.getElementById('edit-catalog-ddv')?.value;
-    const catalogEDV = document.getElementById('edit-catalog-edv')?.value;
-    const schemaDDV = document.getElementById('edit-schema-ddv')?.value;
-    const schemaEDV = document.getElementById('edit-schema-edv')?.value;
-    const tableName = document.getElementById('edit-table-name')?.value;
-    const fecha = document.getElementById('edit-fecha')?.value;
+    // Parameter mapping: elementId -> {pattern, replacement}
+    const paramUpdates = [
+        {
+            id: 'edit-container',
+            pattern: /CONS_CONTAINER_NAME\s*=\s*["'][^'"]+["']/,
+            replacement: (val) => `CONS_CONTAINER_NAME = "${val}"`,
+            name: 'CONS_CONTAINER_NAME'
+        },
+        {
+            id: 'edit-storage',
+            pattern: /PRM_STORAGE_ACCOUNT_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_STORAGE_ACCOUNT_DDV", defaultValue='${val}'`,
+            name: 'PRM_STORAGE_ACCOUNT_DDV'
+        },
+        {
+            id: 'edit-catalog-ddv',
+            pattern: /PRM_CATALOG_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_CATALOG_NAME", defaultValue='${val}'`,
+            name: 'PRM_CATALOG_NAME'
+        },
+        {
+            id: 'edit-catalog-edv',
+            pattern: /PRM_CATALOG_NAME_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_CATALOG_NAME_EDV", defaultValue='${val}'`,
+            name: 'PRM_CATALOG_NAME_EDV'
+        },
+        {
+            id: 'edit-schema-ddv',
+            pattern: /PRM_ESQUEMA_TABLA_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_ESQUEMA_TABLA_DDV", defaultValue='${val}'`,
+            name: 'PRM_ESQUEMA_TABLA_DDV'
+        },
+        {
+            id: 'edit-schema-edv',
+            pattern: /PRM_ESQUEMA_TABLA_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_ESQUEMA_TABLA_EDV", defaultValue='${val}'`,
+            name: 'PRM_ESQUEMA_TABLA_EDV'
+        },
+        {
+            id: 'edit-table-name',
+            pattern: /PRM_TABLE_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_TABLE_NAME", defaultValue='${val}'`,
+            name: 'PRM_TABLE_NAME'
+        },
+        {
+            id: 'edit-fecha',
+            pattern: /PRM_FECHA_RUTINA["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            replacement: (val) => `PRM_FECHA_RUTINA", defaultValue='${val}'`,
+            name: 'PRM_FECHA_RUTINA'
+        }
+    ];
 
-    // Update script with new values
     let newScript = currentOutputScript;
-    let changes = [];
+    const changes = [];
 
-    if (container) {
-        newScript = newScript.replace(
-            /CONS_CONTAINER_NAME\s*=\s*["'][^'"]+["']/,
-            `CONS_CONTAINER_NAME = "${container}"`
-        );
-        changes.push('CONS_CONTAINER_NAME');
-    }
-
-    if (storageAccount) {
-        newScript = newScript.replace(
-            /PRM_STORAGE_ACCOUNT_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_STORAGE_ACCOUNT_DDV", defaultValue='${storageAccount}'`
-        );
-        changes.push('PRM_STORAGE_ACCOUNT_DDV');
-    }
-
-    if (catalogDDV) {
-        newScript = newScript.replace(
-            /PRM_CATALOG_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_CATALOG_NAME", defaultValue='${catalogDDV}'`
-        );
-        changes.push('PRM_CATALOG_NAME');
-    }
-
-    if (catalogEDV) {
-        newScript = newScript.replace(
-            /PRM_CATALOG_NAME_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_CATALOG_NAME_EDV", defaultValue='${catalogEDV}'`
-        );
-        changes.push('PRM_CATALOG_NAME_EDV');
-    }
-
-    if (schemaDDV) {
-        newScript = newScript.replace(
-            /PRM_ESQUEMA_TABLA_DDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_ESQUEMA_TABLA_DDV", defaultValue='${schemaDDV}'`
-        );
-        changes.push('PRM_ESQUEMA_TABLA_DDV');
-    }
-
-    if (schemaEDV) {
-        newScript = newScript.replace(
-            /PRM_ESQUEMA_TABLA_EDV["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_ESQUEMA_TABLA_EDV", defaultValue='${schemaEDV}'`
-        );
-        changes.push('PRM_ESQUEMA_TABLA_EDV');
-    }
-
-    if (tableName) {
-        newScript = newScript.replace(
-            /PRM_TABLE_NAME["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_TABLE_NAME", defaultValue='${tableName}'`
-        );
-        changes.push('PRM_TABLE_NAME');
-    }
-
-    if (fecha) {
-        newScript = newScript.replace(
-            /PRM_FECHA_RUTINA["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
-            `PRM_FECHA_RUTINA", defaultValue='${fecha}'`
-        );
-        changes.push('PRM_FECHA_RUTINA');
-    }
+    paramUpdates.forEach(param => {
+        const value = document.getElementById(param.id)?.value;
+        if (value) {
+            newScript = newScript.replace(param.pattern, param.replacement(value));
+            changes.push(param.name);
+        }
+    });
 
     currentOutputScript = newScript;
     document.getElementById('output-script').value = newScript;
@@ -674,30 +691,7 @@ function resetParams() {
 }
 
 function downloadTxt() {
-    if (!currentOutputScript) {
-        alert('⚠️ No hay script para descargar');
-        return;
-    }
-
-    let filename = 'script_edv.txt';
-
-    if (currentInputScript.includes('MATRIZTRANSACCIONAGENTE')) {
-        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONAGENTE_EDV.txt';
-    } else if (currentInputScript.includes('MATRIZTRANSACCIONCAJERO')) {
-        filename = 'MATRIZVARIABLES_HM_MATRIZTRANSACCIONCAJERO_EDV.txt';
-    } else if (currentInputScript.includes('MATRIZTRANSACCIONPOSMACROGIRO')) {
-        filename = 'HM_MATRIZTRANSACCIONPOSMACROGIRO_EDV.txt';
-    }
-
-    const blob = new Blob([currentOutputScript], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    console.log(`📄 Script descargado como TXT: ${filename}`);
+    downloadFile(currentOutputScript, 'txt');
 }
 
 // ===== KEYBOARD SHORTCUTS =====
