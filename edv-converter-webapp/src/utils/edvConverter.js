@@ -221,21 +221,43 @@ class EDVConverter {
             return script;
         }
 
-        const setupCommands = `
-# COMMAND ----------
+        // Obtener opciones de switches (serán configurables desde la UI)
+        const options = window.edvSetupOptions || {
+            restartPython: true,
+            pipInstall: true,
+            removeAllWidgets: true
+        };
+
+        let setupCommands = '\n';
+
+        // Comando 1: restartPython
+        if (options.restartPython) {
+            setupCommands += `# COMMAND ----------
 
 dbutils.library.restartPython()
 
-# COMMAND ----------
+`;
+        }
+
+        // Comando 2: pip install COE Data Cleaner
+        if (options.pipInstall) {
+            setupCommands += `# COMMAND ----------
 
 !pip3 install --trusted-host 10.79.236.20 https://10.79.236.20:443/artifactory/LHCL.Pypi.Snapshot/lhcl/bcp_coe_data_cleaner/1.0.1/bcp_coe_data_cleaner-1.0.1-py3-none-any.whl
 
-# COMMAND ----------
+`;
+        }
+
+        // Comando 3: removeAll widgets
+        if (options.removeAllWidgets) {
+            setupCommands += `# COMMAND ----------
 
 dbutils.widgets.removeAll()
 
-# COMMAND ----------
 `;
+        }
+
+        setupCommands += '# COMMAND ----------\n';
 
         // Insertar después del header (# ||****... o primera línea)
         const headerEndPattern = /# \*+\s*\n/;
@@ -244,7 +266,13 @@ dbutils.widgets.removeAll()
         if (headerMatch) {
             const insertPos = headerMatch.index + headerMatch[0].length;
             script = script.slice(0, insertPos) + setupCommands + script.slice(insertPos);
-            this.conversionLog.push('✅ Comandos de setup EDV agregados (restartPython, pip install, removeAll)');
+
+            const comandosAgregados = [];
+            if (options.restartPython) comandosAgregados.push('restartPython');
+            if (options.pipInstall) comandosAgregados.push('pip install');
+            if (options.removeAllWidgets) comandosAgregados.push('removeAll');
+
+            this.conversionLog.push(`✅ Comandos de setup EDV agregados: ${comandosAgregados.join(', ')}`);
         } else {
             // Fallback: insertar al inicio después de "# Databricks notebook source"
             const notebookPattern = /# Databricks notebook source\s*\n/;

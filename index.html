@@ -98,8 +98,33 @@
                     </div>
                 </div>
 
+                <!-- Setup Commands Options -->
+                <div style="margin-top: 1.5rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">⚙️ Comandos de Setup EDV</h3>
+                    <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem;">
+                        Selecciona qué comandos agregar al inicio del script EDV:
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem;">
+                        <label class="switch-container">
+                            <input type="checkbox" id="switch-restart-python" checked>
+                            <span class="switch-slider"></span>
+                            <span class="switch-label">🔄 dbutils.library.restartPython()</span>
+                        </label>
+                        <label class="switch-container">
+                            <input type="checkbox" id="switch-pip-install" checked>
+                            <span class="switch-slider"></span>
+                            <span class="switch-label">📦 pip install bcp_coe_data_cleaner</span>
+                        </label>
+                        <label class="switch-container">
+                            <input type="checkbox" id="switch-remove-widgets" checked>
+                            <span class="switch-slider"></span>
+                            <span class="switch-label">🗑️ dbutils.widgets.removeAll()</span>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Convert Button -->
-                <div class="action-buttons">
+                <div class="action-buttons" style="margin-top: 1.5rem;">
                     <button id="convert-btn" class="btn btn-primary btn-large">
                         ⚡ Convertir a EDV
                     </button>

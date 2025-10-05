@@ -161,6 +161,15 @@ function convertScript() {
 
     console.log('🔄 Iniciando conversión...');
 
+    // Leer configuración de switches
+    window.edvSetupOptions = {
+        restartPython: document.getElementById('switch-restart-python').checked,
+        pipInstall: document.getElementById('switch-pip-install').checked,
+        removeAllWidgets: document.getElementById('switch-remove-widgets').checked
+    };
+
+    console.log('⚙️ Opciones de setup:', window.edvSetupOptions);
+
     // Show loading state
     const convertBtn = document.getElementById('convert-btn');
     const originalText = convertBtn.innerHTML;
