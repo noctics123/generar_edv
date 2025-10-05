@@ -147,8 +147,8 @@ function convertScript() {
             conversionResult = converter.convert(currentInputScript);
             currentOutputScript = conversionResult.edvScript;
 
-            // Validate
-            const validator = new EDVValidator();
+            // Validate con validador RIGUROSO
+            const validator = new EDVValidatorRiguroso();
             validationResult = validator.validate(currentOutputScript);
 
             // Update UI
@@ -253,7 +253,11 @@ function updateChecklistTab() {
             <div class="checklist-item ${check.passed ? 'passed' : 'failed'}">
                 <div class="checklist-icon">${check.passed ? '✅' : '❌'}</div>
                 <div class="checklist-content">
-                    <div class="checklist-name">${escapeHtml(check.name)}</div>
+                    <div class="checklist-name">
+                        <span style="color: ${check.level === 'CRÍTICO' ? 'red' : 'gray'}; font-weight: bold;">[${check.level || 'CHECK'}]</span>
+                        ${escapeHtml(check.name)}
+                        ${check.points ? `<span style="color: blue; font-size: 0.9em;"> (+${check.points}pts)</span>` : ''}
+                    </div>
                     <div class="checklist-message">${escapeHtml(check.message)}</div>
                 </div>
             </div>
