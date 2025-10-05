@@ -58,6 +58,10 @@ function initializeEventListeners() {
 
     // Reset params
     document.getElementById('reset-params').addEventListener('click', resetParams);
+
+    // Multi-periodo
+    document.getElementById('multiperiodo-hoy').addEventListener('click', setTodayMultiperiodo);
+    document.getElementById('generate-multiperiodo').addEventListener('click', generateMultiperiodo);
 }
 
 // ===== FILE HANDLING =====
@@ -716,6 +720,133 @@ document.addEventListener('keydown', (e) => {
 
 console.log('🚀 EDV Converter v1.0.0');
 console.log('📚 Atajos: Ctrl+Enter (convertir), Ctrl+S (descargar)');
+
+// ===== MULTI-PERIODO =====
+
+function setTodayMultiperiodo() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    document.getElementById('multiperiodo-fecha').value = dateStr;
+}
+
+/**
+ * Calculate previous months from a date in YYYYMMDD format
+ * @param {string} dateStr - Date in YYYYMMDD format (e.g., "20250131")
+ * @param {number} monthsBack - Number of months to go back
+ * @returns {string} - Date in YYYYMMDD format
+ */
+function getPreviousMonth(dateStr, monthsBack) {
+    const year = parseInt(dateStr.substring(0, 4));
+    const month = parseInt(dateStr.substring(4, 6));
+    const day = parseInt(dateStr.substring(6, 8));
+
+    const date = new Date(year, month - 1, day);
+    date.setMonth(date.getMonth() - monthsBack);
+
+    const newYear = date.getFullYear();
+    const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+    const newDay = String(date.getDate()).padStart(2, '0');
+
+    return `${newYear}${newMonth}${newDay}`;
+}
+
+function generateMultiperiodo() {
+    if (!currentOutputScript) {
+        alert('⚠️ Primero debes convertir un script DDV a EDV');
+        return;
+    }
+
+    const fecha = document.getElementById('multiperiodo-fecha').value;
+
+    if (!fecha || !/^\d{8}$/.test(fecha)) {
+        alert('⚠️ Ingresa una fecha válida en formato YYYYMMDD (8 dígitos)');
+        return;
+    }
+
+    // Calculate 3 periods: current, -1 month, -2 months
+    const periodos = [
+        { offset: 0, label: 'Periodo Actual', fecha: fecha },
+        { offset: 1, label: 'Periodo -1 Mes', fecha: getPreviousMonth(fecha, 1) },
+        { offset: 2, label: 'Periodo -2 Meses', fecha: getPreviousMonth(fecha, 2) }
+    ];
+
+    const scripts = [];
+
+    periodos.forEach(periodo => {
+        // Replace PRM_FECHA_RUTINA in the script
+        let periodScript = currentOutputScript.replace(
+            /PRM_FECHA_RUTINA["'],\s*defaultValue\s*=\s*['"][^'"]+['"]/,
+            `PRM_FECHA_RUTINA", defaultValue='${periodo.fecha}'`
+        );
+
+        scripts.push({
+            label: periodo.label,
+            fecha: periodo.fecha,
+            codmes: periodo.fecha.substring(0, 6), // YYYYMM
+            script: periodScript
+        });
+    });
+
+    // Display results
+    const resultsDiv = document.getElementById('multiperiodo-results');
+    const listDiv = document.getElementById('multiperiodo-list');
+
+    listDiv.innerHTML = scripts.map((s, i) => `
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 1px solid #dee2e6;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h5 style="margin: 0; color: #0066cc;">${s.label}</h5>
+                    <p style="margin: 0.25rem 0 0 0; color: #666; font-family: 'JetBrains Mono', monospace;">
+                        📅 Fecha: ${s.fecha} | 📊 CODMES: ${s.codmes}
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-primary" onclick="downloadPeriodoScript(${i}, 'py')">
+                        💾 .py
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="downloadPeriodoScript(${i}, 'txt')">
+                        📄 .txt
+                    </button>
+                </div>
+            </div>
+            <div style="font-size: 0.875rem; color: #666;">
+                ${s.script.split('\\n').length} líneas | ${(new Blob([s.script]).size / 1024).toFixed(2)} KB
+            </div>
+        </div>
+    `).join('');
+
+    resultsDiv.style.display = 'block';
+
+    // Store scripts globally for download
+    window.multiperiodoScripts = scripts;
+
+    alert(`✅ ${scripts.length} scripts generados para los últimos 3 periodos`);
+}
+
+function downloadPeriodoScript(index, extension) {
+    if (!window.multiperiodoScripts || !window.multiperiodoScripts[index]) {
+        alert('⚠️ Error: Script no encontrado');
+        return;
+    }
+
+    const scriptData = window.multiperiodoScripts[index];
+    const baseFilename = detectScriptType();
+    const filename = `${baseFilename}_${scriptData.codmes}.${extension}`;
+
+    const blob = new Blob([scriptData.script], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    console.log(`💾 Script multi-periodo descargado: ${filename}`);
+}
 
 
 function updateParamsTab() {

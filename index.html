@@ -135,6 +135,7 @@
                     <button class="tab active" data-tab="diff">📊 Diff</button>
                     <button class="tab" data-tab="params">🔧 Parámetros</button>
                     <button class="tab" data-tab="output">📄 Script EDV</button>
+                    <button class="tab" data-tab="multiperiodo">📅 Multi-Periodo</button>
                     <button class="tab" data-tab="checklist">✅ Checklist</button>
                     <button class="tab" data-tab="managed">💾 Managed Tables</button>
                     <button class="tab" data-tab="log">📝 Log</button>
@@ -169,6 +170,43 @@
                         <div class="editor-footer">
                             <span id="output-lines">0 líneas</span>
                             <span id="output-size">0 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Multi-Periodo -->
+                <div class="tab-content" id="tab-multiperiodo">
+                    <div style="background: white; padding: 2rem; border-radius: 8px;">
+                        <h3 style="margin-bottom: 1rem;">📅 Generar Scripts para Múltiples Periodos</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">
+                            Genera 3 scripts EDV para los últimos 3 periodos (codmes) basados en la fecha actual.
+                            Útil para pruebas EDV que requieren validación de 3 meses.
+                        </p>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                                📅 Fecha de Rutina Actual (YYYYMMDD):
+                            </label>
+                            <input type="text" id="multiperiodo-fecha"
+                                   placeholder="20250131"
+                                   maxlength="8"
+                                   style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; width: 200px; font-family: 'JetBrains Mono', monospace;" />
+                            <button class="btn btn-secondary" id="multiperiodo-hoy" style="margin-left: 1rem;">
+                                📆 Usar Hoy
+                            </button>
+                        </div>
+
+                        <div style="margin-bottom: 1.5rem;">
+                            <button class="btn btn-primary btn-large" id="generate-multiperiodo">
+                                ⚡ Generar 3 Scripts (Últimos 3 Meses)
+                            </button>
+                        </div>
+
+                        <div id="multiperiodo-results" style="display: none;">
+                            <h4 style="margin-bottom: 1rem;">📦 Scripts Generados:</h4>
+                            <div id="multiperiodo-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                                <!-- Populated by JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
