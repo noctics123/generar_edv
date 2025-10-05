@@ -172,7 +172,18 @@ function convertScript() {
 
         } catch (error) {
             console.error('❌ Error en conversión:', error);
-            alert('❌ Error al convertir el script. Revisa la consola para más detalles.');
+
+            // Mostrar el error en la UI para depuración
+            const errorLogEl = document.getElementById('log-errors');
+            if (errorLogEl) {
+                errorLogEl.innerHTML = `<div class="log-item error"><strong>Error:</strong> ${escapeHtml(error.message)}<br><pre>${escapeHtml(error.stack)}</pre></div>`;
+            }
+
+            // Asegurarse de que la sección de salida sea visible y mostrar el log
+            document.getElementById('output-section').style.display = 'block';
+            switchTab('log');
+
+            alert('❌ Error al convertir el script. Revisa la pestaña "Log" para más detalles.');
         } finally {
             // Restore button
             convertBtn.innerHTML = originalText;
