@@ -507,8 +507,18 @@ class EDVValidatorRiguroso {
     validateCleanup(script) {
         const hasCleanPaths = /cleanPaths/.test(script);
         const hasDropTable = /DROP\s+TABLE\s+IF\s+EXISTS/i.test(script);
+        const hasCoeDataCleaner = /bcp_coe_data_cleaner|coe_data_cleaner|DataCleanerLHCL/i.test(script);
 
-        if (!hasCleanPaths && hasDropTable) {
+        if (hasCoeDataCleaner) {
+            this.checks.push({
+                level: 'Limpieza',
+                name: '5. Limpieza con COE Data Cleaner',
+                passed: true,
+                points: 5,
+                message: '✅ Usa COE Data Cleaner (estándar BCP) (+5 bonus)'
+            });
+            return true;
+        } else if (!hasCleanPaths && hasDropTable) {
             this.checks.push({
                 level: 'Limpieza',
                 name: '5. Limpieza con DROP TABLE',
@@ -520,12 +530,12 @@ class EDVValidatorRiguroso {
         } else if (hasCleanPaths) {
             this.checks.push({
                 level: 'Limpieza',
-                name: '5. Limpieza con DROP TABLE',
+                name: '5. Limpieza',
                 passed: false,
                 points: 0,
-                message: '⚠️ Aún usa cleanPaths (reemplazar por DROP TABLE)'
+                message: '⚠️ Aún usa cleanPaths (reemplazar por COE Data Cleaner o DROP TABLE)'
             });
-            this.warnings.push('Reemplazar cleanPaths por DROP TABLE IF EXISTS');
+            this.warnings.push('Reemplazar cleanPaths por COE Data Cleaner o DROP TABLE IF EXISTS');
         }
         return false;
     }
@@ -590,23 +600,27 @@ class EDVValidatorRiguroso {
             }
         }
 
-        // Advertencia: PRM_CARPETA_OUTPUT debería ser de usuario
-        const carpetaPattern = /dbutils\.widgets\.text\(\s*name\s*=\s*["']PRM_CARPETA_OUTPUT["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
-        const carpetaMatch = script.match(carpetaPattern);
+        // Advertencia: PRM_CARPETA_OUTPUT solo aplica a DDV (no se usa en EDV)
+        const isEDV = /PRM_CATALOG_NAME_EDV|PRM_ESQUEMA_TABLA_EDV|PRM_ESQUEMA_TABLA_ESCRITURA/.test(script);
 
-        if (carpetaMatch) {
-            const carpeta = carpetaMatch[1];
-            const hasUserFolder = /RUBEN|PEDRO|TEST|DEUDA_TECNICA/i.test(carpeta);
+        if (!isEDV) {
+            const carpetaPattern = /dbutils\.widgets\.text\(\s*name\s*=\s*["']PRM_CARPETA_OUTPUT["']\s*,\s*defaultValue\s*=\s*["']([^"']+)["']/;
+            const carpetaMatch = script.match(carpetaPattern);
 
-            if (carpeta.includes('desa/bcp/ddv') && !hasUserFolder) {
-                this.checks.push({
-                    level: 'RECOMENDADO',
-                    name: '6.3 Carpeta de trabajo personalizada',
-                    passed: false,
-                    points: 0,
-                    message: `⚠️ PRM_CARPETA_OUTPUT usa carpeta por defecto. Considera usar carpeta personal`
-                });
-                this.warnings.push(`PRM_CARPETA_OUTPUT="${carpeta}" usa carpeta por defecto. Personalizar con nombre de usuario/proyecto.`);
+            if (carpetaMatch) {
+                const carpeta = carpetaMatch[1];
+                const hasUserFolder = /RUBEN|PEDRO|TEST|DEUDA_TECNICA/i.test(carpeta);
+
+                if (carpeta.includes('desa/bcp/ddv') && !hasUserFolder) {
+                    this.checks.push({
+                        level: 'RECOMENDADO',
+                        name: '6.3 Carpeta de trabajo personalizada (DDV)',
+                        passed: false,
+                        points: 0,
+                        message: `⚠️ PRM_CARPETA_OUTPUT usa carpeta por defecto. Considera usar carpeta personal`
+                    });
+                    this.warnings.push(`PRM_CARPETA_OUTPUT="${carpeta}" usa carpeta por defecto. Personalizar con nombre de usuario/proyecto.`);
+                }
             }
         }
     }

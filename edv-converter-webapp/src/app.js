@@ -682,6 +682,9 @@ function regenerateEDV() {
     validationResult = validator.validate(currentOutputScript);
     updateValidationResults();
 
+    // Re-generate diff with updated script
+    generateDiff();
+
     alert(`✅ Script EDV re-generado con ${changes.length} cambios:\n${changes.join(', ')}`);
 }
 

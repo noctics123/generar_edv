@@ -143,6 +143,9 @@ class EDVConverter {
         edvScript = this.updateStorageAccount(edvScript);
         edvScript = this.updateCatalogName(edvScript);
 
+        // 0.5. Agregar comandos de setup EDV (restartPython, pip install, removeAll)
+        edvScript = this.addEDVSetupCommands(edvScript);
+
         // 1. Agregar widgets EDV
         edvScript = this.addEDVWidgets(edvScript);
 
@@ -179,6 +182,62 @@ class EDVConverter {
             log: this.conversionLog,
             warnings: this.warnings
         };
+    }
+
+    /**
+     * Agrega comandos de setup EDV al inicio del script
+     * Incluye: restartPython, pip install COE Data Cleaner, removeAll widgets
+     */
+    addEDVSetupCommands(script) {
+        // Verificar si ya existen
+        if (script.includes('dbutils.library.restartPython()') &&
+            script.includes('bcp_coe_data_cleaner') &&
+            script.includes('dbutils.widgets.removeAll()')) {
+            this.warnings.push('Comandos de setup EDV ya existen');
+            return script;
+        }
+
+        const setupCommands = `
+# COMMAND ----------
+
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+!pip3 install --trusted-host 10.79.236.20 https://10.79.236.20:443/artifactory/LHCL.Pypi.Snapshot/lhcl/bcp_coe_data_cleaner/1.0.1/bcp_coe_data_cleaner-1.0.1-py3-none-any.whl
+
+# COMMAND ----------
+
+dbutils.widgets.removeAll()
+
+# COMMAND ----------
+`;
+
+        // Insertar después del header (# ||****... o primera línea)
+        const headerEndPattern = /# \*+\s*\n/;
+        const headerMatch = script.match(headerEndPattern);
+
+        if (headerMatch) {
+            const insertPos = headerMatch.index + headerMatch[0].length;
+            script = script.slice(0, insertPos) + setupCommands + script.slice(insertPos);
+            this.conversionLog.push('✅ Comandos de setup EDV agregados (restartPython, pip install, removeAll)');
+        } else {
+            // Fallback: insertar al inicio después de "# Databricks notebook source"
+            const notebookPattern = /# Databricks notebook source\s*\n/;
+            const notebookMatch = script.match(notebookPattern);
+
+            if (notebookMatch) {
+                const insertPos = notebookMatch.index + notebookMatch[0].length;
+                script = script.slice(0, insertPos) + setupCommands + script.slice(insertPos);
+                this.conversionLog.push('✅ Comandos de setup EDV agregados después del header Databricks');
+            } else {
+                // Último fallback: insertar al inicio
+                script = setupCommands + script;
+                this.conversionLog.push('✅ Comandos de setup EDV agregados al inicio del script');
+            }
+        }
+
+        return script;
     }
 
     /**
