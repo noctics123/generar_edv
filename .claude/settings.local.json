@@ -14,7 +14,12 @@
       "Bash(git commit:*)",
       "Bash(dir:*)",
       "Bash(git checkout:*)",
-      "Bash(start chrome:*)"
+      "Bash(start chrome:*)",
+      "Bash(cat:*)",
+      "Bash(git restore:*)",
+      "Bash(git log:*)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/noctics123/generar_edv/main/edv-converter-webapp/src/app.js\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/noctics123/generar_edv/main/index.html\")"
     ],
     "deny": [],
     "ask": []

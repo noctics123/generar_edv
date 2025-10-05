@@ -256,11 +256,12 @@ class EDVConverter {
             removeAllWidgets: true
         };
 
-        let setupCommands = '\n';
+        let setupCommands = '';
 
         // Comando 1: restartPython
         if (options.restartPython) {
-            setupCommands += `# COMMAND ----------
+            setupCommands += `
+# COMMAND ----------
 
 dbutils.library.restartPython()
 
