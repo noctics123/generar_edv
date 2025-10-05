@@ -1,0 +1,18 @@
+ERROR: No se encontraron columnas para el grupo 'P2' en la tabla catalog_lhcl_prod_bcp.bcp_ddv_matrizvariables_v.mm_parametrogrupoconcepto para la tabla HM_CONCEPTOTRANSACCIONPOS
+ValueError: ERROR: No se encontraron columnas para el grupo 'P2' en la tabla catalog_lhcl_prod_bcp.bcp_ddv_matrizvariables_v.mm_parametrogrupoconcepto para la tabla HM_CONCEPTOTRANSACCIONPOS
+File <command-5905707605392656>, line 7
+      1 ###
+      2  # @section Ejecución
+      3  ##
+      4 
+      5 # Inicio Proceso main()
+      6 if __name__ == "__main__":
+----> 7     main()
+      8 #retorna el valor en 1 si el proceso termina de manera satisfactoria.
+      9 dbutils.notebook.exit(1)
+File <command-5905707605392654>, line 99, in extraccionInformacion12Meses(codMes, codMes12Atras, carpetaDetConceptoClienteSegundaTranspuesta, carpetaClientePrimeraTranspuesta)
+     97     error_msg = f"ERROR: No se encontraron columnas para el grupo '{CONS_GRUPO}' en la tabla {PRM_ESQUEMA_TABLA}.{PRM_TABLA_PARAM_GRUPO} para la tabla {PRM_TABLA_PRIMERATRANSPUESTA}"
+     98     print(error_msg)
+---> 99     raise ValueError(error_msg)
+    101 # Debug: Imprimir cadenaGrupoColumns para diagnostico
+    102 print(f"DEBUG - cadenaGrupoColumns: [{cadenaGrupoColumns}]")

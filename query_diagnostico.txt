@@ -1,0 +1,24 @@
+-- Query para diagnosticar el problema con mm_parametrogrupoconcepto
+
+SELECT nomgrupo, nomtablaconcepto, nomconcepto
+FROM catalog_lhcl_prod_bcp.bcp_ddv_matrizvariables_v.mm_parametrogrupoconcepto
+WHERE UPPER(nomtablaconcepto) LIKE '%CONCEPTOTRANSACCIONPOS%'
+ORDER BY nomgrupo;
+
+-- Si la query anterior no retorna nada, ejecuta esta para ver todos los registros:
+
+SELECT DISTINCT nomgrupo, nomtablaconcepto
+FROM catalog_lhcl_prod_bcp.bcp_ddv_matrizvariables_v.mm_parametrogrupoconcepto
+ORDER BY nomtablaconcepto, nomgrupo;
+
+-- Para verificar si hay espacios extra o caracteres especiales:
+
+SELECT
+    nomgrupo,
+    nomtablaconcepto,
+    LENGTH(nomgrupo) as len_grupo,
+    LENGTH(nomtablaconcepto) as len_tabla,
+    nomconcepto
+FROM catalog_lhcl_prod_bcp.bcp_ddv_matrizvariables_v.mm_parametrogrupoconcepto
+WHERE nomgrupo = 'P2'
+LIMIT 20;
