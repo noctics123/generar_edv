@@ -70,6 +70,9 @@ function openComparisonModal() {
     code1.innerHTML = highlightDifferences(lines1, lines2, 'left');
     code2.innerHTML = highlightDifferences(lines2, lines1, 'right');
 
+    // Setup click handlers para resaltar líneas equivalentes
+    setupLineClickHandlers();
+
     // Mostrar modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // Prevent background scroll
@@ -122,7 +125,7 @@ function highlightDifferences(linesA, linesB, side) {
         // Escape HTML
         const escapedLine = escapeHtml(lineA);
 
-        html += `<div class="diff-line ${cssClass}">`;
+        html += `<div class="diff-line ${cssClass}" data-line="${lineNumber}">`;
         html += `<span class="line-number">${lineNumber}</span>`;
         html += `<span class="line-marker">${marker}</span>`;
         html += `<span class="line-content">${escapedLine || ' '}</span>`;
@@ -130,6 +133,81 @@ function highlightDifferences(linesA, linesB, side) {
     }
 
     return html;
+}
+
+/**
+ * Setup click handlers para resaltar líneas equivalentes
+ */
+function setupLineClickHandlers() {
+    const code1 = document.getElementById('comparison-code-1');
+    const code2 = document.getElementById('comparison-code-2');
+
+    if (!code1 || !code2) return;
+
+    // Click en panel izquierdo
+    code1.addEventListener('click', (e) => {
+        const line = e.target.closest('.diff-line');
+        if (!line) return;
+
+        const lineNumber = line.getAttribute('data-line');
+        highlightEquivalentLines(lineNumber, 'left');
+    });
+
+    // Click en panel derecho
+    code2.addEventListener('click', (e) => {
+        const line = e.target.closest('.diff-line');
+        if (!line) return;
+
+        const lineNumber = line.getAttribute('data-line');
+        highlightEquivalentLines(lineNumber, 'right');
+    });
+}
+
+/**
+ * Resalta líneas equivalentes en ambos paneles
+ */
+function highlightEquivalentLines(lineNumber, clickedSide) {
+    const code1 = document.getElementById('comparison-code-1');
+    const code2 = document.getElementById('comparison-code-2');
+
+    // Remover highlights anteriores
+    code1.querySelectorAll('.line-highlighted').forEach(el => el.classList.remove('line-highlighted'));
+    code2.querySelectorAll('.line-highlighted').forEach(el => el.classList.remove('line-highlighted'));
+
+    // Resaltar línea clickeada
+    const clickedCode = clickedSide === 'left' ? code1 : code2;
+    const otherCode = clickedSide === 'left' ? code2 : code1;
+
+    const clickedLine = clickedCode.querySelector(`.diff-line[data-line="${lineNumber}"]`);
+    if (clickedLine) {
+        clickedLine.classList.add('line-highlighted');
+
+        // Resaltar línea equivalente en el otro panel (misma línea número)
+        const equivalentLine = otherCode.querySelector(`.diff-line[data-line="${lineNumber}"]`);
+        if (equivalentLine) {
+            equivalentLine.classList.add('line-highlighted');
+
+            // Scroll para que ambas líneas sean visibles
+            scrollToLine(clickedLine, clickedSide);
+            scrollToLine(equivalentLine, clickedSide === 'left' ? 'right' : 'left');
+        }
+    }
+}
+
+/**
+ * Scroll suave a una línea específica
+ */
+function scrollToLine(lineElement, side) {
+    const container = document.getElementById(side === 'left' ? 'comparison-content-1' : 'comparison-content-2');
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const lineRect = lineElement.getBoundingClientRect();
+
+    // Scroll solo si la línea no está visible
+    if (lineRect.top < containerRect.top || lineRect.bottom > containerRect.bottom) {
+        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 /**
