@@ -138,11 +138,12 @@
     word-wrap: break-word;
 }
 
-/* Line Same - No differences */
+/* Line Same - No differences - SIN COLOR DE FONDO */
 .line-same {
     background: transparent;
     cursor: pointer;
     transition: background 0.1s;
+    border-left: 3px solid transparent;
 }
 
 .line-same:hover {
@@ -150,7 +151,11 @@
 }
 
 .line-same .line-marker {
-    color: #858585;
+    color: transparent; /* No mostrar marker para líneas idénticas */
+}
+
+.line-same .line-number {
+    color: #858585; /* Color gris neutro */
 }
 
 /* Line Modified - Different content - VSCode Dark+ Yellow */
@@ -216,16 +221,34 @@
     background: rgba(101, 31, 31, 0.2);
 }
 
-/* Highlighted Line - When clicked */
+/* Highlighted Line - When clicked - COLOR DISTINTO PARA SELECCIÓN */
 .line-highlighted {
-    background: rgba(14, 99, 156, 0.4) !important; /* VSCode selection blue */
-    border-left-color: #0e639c !important;
+    background: rgba(58, 150, 221, 0.35) !important; /* Azul más claro y distintivo */
+    border-left: 4px solid #3a96dd !important; /* Border más grueso */
+    box-shadow: inset 0 0 0 1px rgba(58, 150, 221, 0.3);
     animation: pulse 0.3s ease-out;
 }
 
+.line-highlighted .line-number {
+    color: #3a96dd !important;
+    background: rgba(58, 150, 221, 0.2) !important;
+    font-weight: bold;
+}
+
+.line-highlighted .line-marker {
+    color: #3a96dd !important;
+    font-weight: bold;
+}
+
 @keyframes pulse {
-    0% { background: rgba(14, 99, 156, 0.8); }
-    100% { background: rgba(14, 99, 156, 0.4); }
+    0% {
+        background: rgba(58, 150, 221, 0.6);
+        box-shadow: inset 0 0 0 2px rgba(58, 150, 221, 0.5);
+    }
+    100% {
+        background: rgba(58, 150, 221, 0.35);
+        box-shadow: inset 0 0 0 1px rgba(58, 150, 221, 0.3);
+    }
 }
 
 /* Scrollbar Styling */

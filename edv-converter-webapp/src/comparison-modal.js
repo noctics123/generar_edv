@@ -63,12 +63,15 @@ function openComparisonModal() {
     header1.textContent = script1Name;
     header2.textContent = script2Name;
 
-    // Comparar y resaltar diferencias
+    // Computar diff real usando LCS
     const lines1 = verifyScript1Content.split('\n');
     const lines2 = verifyScript2Content.split('\n');
 
-    code1.innerHTML = highlightDifferences(lines1, lines2, 'left');
-    code2.innerHTML = highlightDifferences(lines2, lines1, 'right');
+    const diffOps = computeDiff(lines1, lines2);
+
+    // Renderizar ambos lados con mapeo correcto
+    code1.innerHTML = renderDiffSide(diffOps, 'left');
+    code2.innerHTML = renderDiffSide(diffOps, 'right');
 
     // Setup click handlers para resaltar líneas equivalentes
     setupLineClickHandlers();
@@ -92,45 +95,101 @@ function closeComparisonModal() {
 }
 
 /**
- * Highlight differences between two sets of lines
- * Returns HTML with VSCode Dark+ syntax highlighting and difference markers
+ * Compute diff using Myers algorithm (similar to git diff)
+ * Returns array of diff operations
  */
-function highlightDifferences(linesA, linesB, side) {
-    const maxLines = Math.max(linesA.length, linesB.length);
+function computeDiff(linesA, linesB) {
+    const diff = [];
+    const n = linesA.length;
+    const m = linesB.length;
+
+    // LCS (Longest Common Subsequence) usando programación dinámica
+    const lcs = Array(n + 1).fill(null).map(() => Array(m + 1).fill(0));
+
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            if (linesA[i - 1].trim() === linesB[j - 1].trim()) {
+                lcs[i][j] = lcs[i - 1][j - 1] + 1;
+            } else {
+                lcs[i][j] = Math.max(lcs[i - 1][j], lcs[i][j - 1]);
+            }
+        }
+    }
+
+    // Backtrack para construir el diff
+    let i = n, j = m;
+    const result = [];
+
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && linesA[i - 1].trim() === linesB[j - 1].trim()) {
+            result.unshift({ type: 'same', lineA: i - 1, lineB: j - 1, content: linesA[i - 1] });
+            i--;
+            j--;
+        } else if (j > 0 && (i === 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+            result.unshift({ type: 'added', lineA: null, lineB: j - 1, content: linesB[j - 1] });
+            j--;
+        } else if (i > 0) {
+            result.unshift({ type: 'removed', lineA: i - 1, lineB: null, content: linesA[i - 1] });
+            i--;
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Render diff for one side with proper mapping
+ */
+function renderDiffSide(diffOps, side) {
     let html = '';
+    let lineNumberA = 0;
+    let lineNumberB = 0;
 
-    for (let i = 0; i < maxLines; i++) {
-        const lineA = linesA[i] || '';
-        const lineB = linesB[i] || '';
-        const lineNumber = i + 1;
-
-        // Determine if line is different, added, or removed
-        let cssClass = 'line-same';
+    diffOps.forEach((op, index) => {
+        let cssClass = '';
         let marker = ' ';
+        let lineNumber = '';
+        let mappedIndex = null;
 
-        if (i >= linesB.length) {
-            // Line only exists in A (removed in B perspective, added in A perspective)
-            cssClass = side === 'left' ? 'line-added' : 'line-removed';
-            marker = side === 'left' ? '+' : '-';
-        } else if (i >= linesA.length) {
-            // Line only exists in B (added in B perspective, removed in A perspective)
-            cssClass = side === 'left' ? 'line-removed' : 'line-added';
-            marker = side === 'left' ? '-' : '+';
-        } else if (lineA.trim() !== lineB.trim()) {
-            // Lines exist but are different
-            cssClass = 'line-modified';
-            marker = '~';
+        if (op.type === 'same') {
+            cssClass = 'line-same';
+            marker = ' ';
+            lineNumberA++;
+            lineNumberB++;
+            lineNumber = side === 'left' ? lineNumberA : lineNumberB;
+            mappedIndex = index; // Índice en el array de diff
+        } else if (op.type === 'added') {
+            lineNumberB++;
+            if (side === 'left') {
+                // En el lado izquierdo, las líneas agregadas en B no se muestran
+                return;
+            } else {
+                cssClass = 'line-added';
+                marker = '+';
+                lineNumber = lineNumberB;
+                mappedIndex = index;
+            }
+        } else if (op.type === 'removed') {
+            lineNumberA++;
+            if (side === 'left') {
+                cssClass = 'line-removed';
+                marker = '-';
+                lineNumber = lineNumberA;
+                mappedIndex = index;
+            } else {
+                // En el lado derecho, las líneas removidas de A no se muestran
+                return;
+            }
         }
 
-        // Escape HTML
-        const escapedLine = escapeHtml(lineA);
+        const escapedLine = escapeHtml(op.content);
 
-        html += `<div class="diff-line ${cssClass}" data-line="${lineNumber}">`;
+        html += `<div class="diff-line ${cssClass}" data-diff-index="${mappedIndex}">`;
         html += `<span class="line-number">${lineNumber}</span>`;
         html += `<span class="line-marker">${marker}</span>`;
         html += `<span class="line-content">${escapedLine || ' '}</span>`;
         html += `</div>\n`;
-    }
+    });
 
     return html;
 }
@@ -149,8 +208,8 @@ function setupLineClickHandlers() {
         const line = e.target.closest('.diff-line');
         if (!line) return;
 
-        const lineNumber = line.getAttribute('data-line');
-        highlightEquivalentLines(lineNumber, 'left');
+        const diffIndex = line.getAttribute('data-diff-index');
+        highlightEquivalentLines(diffIndex);
     });
 
     // Click en panel derecho
@@ -158,15 +217,15 @@ function setupLineClickHandlers() {
         const line = e.target.closest('.diff-line');
         if (!line) return;
 
-        const lineNumber = line.getAttribute('data-line');
-        highlightEquivalentLines(lineNumber, 'right');
+        const diffIndex = line.getAttribute('data-diff-index');
+        highlightEquivalentLines(diffIndex);
     });
 }
 
 /**
- * Resalta líneas equivalentes en ambos paneles
+ * Resalta líneas equivalentes en ambos paneles usando diff index
  */
-function highlightEquivalentLines(lineNumber, clickedSide) {
+function highlightEquivalentLines(diffIndex) {
     const code1 = document.getElementById('comparison-code-1');
     const code2 = document.getElementById('comparison-code-2');
 
@@ -174,23 +233,18 @@ function highlightEquivalentLines(lineNumber, clickedSide) {
     code1.querySelectorAll('.line-highlighted').forEach(el => el.classList.remove('line-highlighted'));
     code2.querySelectorAll('.line-highlighted').forEach(el => el.classList.remove('line-highlighted'));
 
-    // Resaltar línea clickeada
-    const clickedCode = clickedSide === 'left' ? code1 : code2;
-    const otherCode = clickedSide === 'left' ? code2 : code1;
+    // Buscar líneas con el mismo diff-index
+    const line1 = code1.querySelector(`.diff-line[data-diff-index="${diffIndex}"]`);
+    const line2 = code2.querySelector(`.diff-line[data-diff-index="${diffIndex}"]`);
 
-    const clickedLine = clickedCode.querySelector(`.diff-line[data-line="${lineNumber}"]`);
-    if (clickedLine) {
-        clickedLine.classList.add('line-highlighted');
+    if (line1) {
+        line1.classList.add('line-highlighted');
+        scrollToLine(line1, 'left');
+    }
 
-        // Resaltar línea equivalente en el otro panel (misma línea número)
-        const equivalentLine = otherCode.querySelector(`.diff-line[data-line="${lineNumber}"]`);
-        if (equivalentLine) {
-            equivalentLine.classList.add('line-highlighted');
-
-            // Scroll para que ambas líneas sean visibles
-            scrollToLine(clickedLine, clickedSide);
-            scrollToLine(equivalentLine, clickedSide === 'left' ? 'right' : 'left');
-        }
+    if (line2) {
+        line2.classList.add('line-highlighted');
+        scrollToLine(line2, 'right');
     }
 }
 
