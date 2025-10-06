@@ -421,14 +421,27 @@
 }
 
 /* Editor Enhancements for Verification */
-/* REMOVED: Conflicting height constraints that were causing editor expansion
-   The .code-editor-wrapper already handles height with 400px fixed
-#verify-script-1 .code-editor,
-#verify-script-2 .code-editor {
-    min-height: 300px;
-    max-height: 600px;
+/* CRITICAL: Fix .editor-container height to prevent expansion */
+.script-upload-card .editor-container {
+    height: auto;
+    max-height: none;
 }
-*/
+
+.script-upload-card .editor-container .code-editor-wrapper {
+    height: 400px !important;
+    max-height: 400px !important;
+    overflow: auto !important;
+}
+
+/* CRITICAL: Override base .code-editor rules to prevent expansion */
+#verify-script-1.code-editor,
+#verify-script-2.code-editor {
+    min-height: 0 !important;
+    max-height: 100% !important;
+    height: 100% !important;
+    resize: none !important;
+    overflow: hidden !important;
+}
 
 /* Scrollbar Styling */
 .code-editor-wrapper::-webkit-scrollbar {
