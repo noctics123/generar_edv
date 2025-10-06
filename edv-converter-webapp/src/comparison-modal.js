@@ -33,8 +33,8 @@ function initializeComparisonModal() {
         }
     });
 
-    // Sync scroll entre paneles
-    setupSyncScroll();
+    // REMOVED: Sync scroll - ahora permitimos scroll independiente
+    // setupSyncScroll();
 
     console.log('[OK] Comparison modal initialized');
 }
@@ -63,13 +63,12 @@ function openComparisonModal() {
     header1.textContent = script1Name;
     header2.textContent = script2Name;
 
-    // Cargar código con syntax highlighting
-    code1.textContent = verifyScript1Content;
-    code2.textContent = verifyScript2Content;
+    // Comparar y resaltar diferencias
+    const lines1 = verifyScript1Content.split('\n');
+    const lines2 = verifyScript2Content.split('\n');
 
-    // Aplicar syntax highlighting
-    Prism.highlightElement(code1);
-    Prism.highlightElement(code2);
+    code1.innerHTML = highlightDifferences(lines1, lines2, 'left');
+    code2.innerHTML = highlightDifferences(lines2, lines1, 'right');
 
     // Mostrar modal
     modal.classList.add('active');
@@ -90,29 +89,54 @@ function closeComparisonModal() {
 }
 
 /**
- * Configura scroll sincronizado entre paneles
+ * Highlight differences between two sets of lines
+ * Returns HTML with VSCode Dark+ syntax highlighting and difference markers
  */
-function setupSyncScroll() {
-    const content1 = document.getElementById('comparison-content-1');
-    const content2 = document.getElementById('comparison-content-2');
+function highlightDifferences(linesA, linesB, side) {
+    const maxLines = Math.max(linesA.length, linesB.length);
+    let html = '';
 
-    if (!content1 || !content2) return;
+    for (let i = 0; i < maxLines; i++) {
+        const lineA = linesA[i] || '';
+        const lineB = linesB[i] || '';
+        const lineNumber = i + 1;
 
-    let isSyncing = false;
+        // Determine if line is different, added, or removed
+        let cssClass = 'line-same';
+        let marker = ' ';
 
-    content1.addEventListener('scroll', () => {
-        if (isSyncing) return;
-        isSyncing = true;
-        content2.scrollTop = content1.scrollTop;
-        content2.scrollLeft = content1.scrollLeft;
-        setTimeout(() => isSyncing = false, 10);
-    });
+        if (i >= linesB.length) {
+            // Line only exists in A (removed in B perspective, added in A perspective)
+            cssClass = side === 'left' ? 'line-added' : 'line-removed';
+            marker = side === 'left' ? '+' : '-';
+        } else if (i >= linesA.length) {
+            // Line only exists in B (added in B perspective, removed in A perspective)
+            cssClass = side === 'left' ? 'line-removed' : 'line-added';
+            marker = side === 'left' ? '-' : '+';
+        } else if (lineA.trim() !== lineB.trim()) {
+            // Lines exist but are different
+            cssClass = 'line-modified';
+            marker = '~';
+        }
 
-    content2.addEventListener('scroll', () => {
-        if (isSyncing) return;
-        isSyncing = true;
-        content1.scrollTop = content2.scrollTop;
-        content1.scrollLeft = content2.scrollLeft;
-        setTimeout(() => isSyncing = false, 10);
-    });
+        // Escape HTML
+        const escapedLine = escapeHtml(lineA);
+
+        html += `<div class="diff-line ${cssClass}">`;
+        html += `<span class="line-number">${lineNumber}</span>`;
+        html += `<span class="line-marker">${marker}</span>`;
+        html += `<span class="line-content">${escapedLine || ' '}</span>`;
+        html += `</div>\n`;
+    }
+
+    return html;
+}
+
+/**
+ * Escape HTML special characters
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

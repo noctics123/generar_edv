@@ -101,9 +101,95 @@
     font-size: 0.875rem;
     line-height: 1.6;
     color: #abb2bf;
+    margin: 0;
+}
+
+/* Diff Line Styles - VSCode Dark+ Theme */
+.diff-line {
+    display: flex;
+    min-height: 1.6em;
+    line-height: 1.6;
+    font-family: var(--font-mono);
+}
+
+.line-number {
+    flex-shrink: 0;
+    width: 50px;
+    padding-right: 1rem;
+    text-align: right;
+    color: #858585;
+    user-select: none;
+    border-right: 1px solid #3e3e42;
+    margin-right: 0.5rem;
+}
+
+.line-marker {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+    font-weight: bold;
+    user-select: none;
+    margin-right: 0.5rem;
+}
+
+.line-content {
+    flex: 1;
     white-space: pre-wrap;
     word-wrap: break-word;
-    margin: 0;
+}
+
+/* Line Same - No differences */
+.line-same {
+    background: transparent;
+}
+
+.line-same .line-marker {
+    color: #858585;
+}
+
+/* Line Modified - Different content */
+.line-modified {
+    background: rgba(255, 193, 7, 0.15);
+    border-left: 3px solid #ffc107;
+}
+
+.line-modified .line-marker {
+    color: #ffc107;
+}
+
+.line-modified .line-number {
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.1);
+}
+
+/* Line Added - Green */
+.line-added {
+    background: rgba(76, 175, 80, 0.15);
+    border-left: 3px solid #4caf50;
+}
+
+.line-added .line-marker {
+    color: #4caf50;
+}
+
+.line-added .line-number {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+/* Line Removed - Red */
+.line-removed {
+    background: rgba(244, 67, 54, 0.15);
+    border-left: 3px solid #f44336;
+}
+
+.line-removed .line-marker {
+    color: #f44336;
+}
+
+.line-removed .line-number {
+    color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
 }
 
 /* Scrollbar Styling */

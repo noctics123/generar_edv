@@ -171,15 +171,60 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s;
-    /* CRITICAL: Prevent card expansion - constrain total height */
-    display: flex !important;
-    flex-direction: column !important;
-    max-height: 650px !important; /* h3 + upload + editor(400px) + footer + padding */
-    overflow: hidden !important; /* Clip any overflow */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .script-upload-card:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* File Info Card */
+.file-info-card {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+}
+
+.file-info-card.has-file {
+    background: #e7f5ff;
+    border-color: #3b82f6;
+    border-style: solid;
+}
+
+.file-info-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.file-info-icon {
+    font-size: 2.5rem;
+    flex-shrink: 0;
+}
+
+.file-info-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.file-info-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-info-stats {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.875rem;
+    color: #6b7280;
 }
 
 /* Verification Results */

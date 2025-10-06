@@ -120,6 +120,14 @@ function handleVerifyFileUpload(event, scriptNumber) {
 
         updateVerifyStats(scriptNumber);
         document.getElementById(`verify-file-name-${scriptNumber}`).textContent = file.name;
+
+        // Update UI to show file loaded
+        const card = document.querySelector(`.script-upload-card:nth-of-type(${scriptNumber}) .file-info-card`);
+        if (card) card.classList.add('has-file');
+
+        const clearBtn = document.getElementById(`verify-clear-${scriptNumber}`);
+        if (clearBtn) clearBtn.style.display = 'block';
+
         console.log(`[OK] Script ${scriptNumber} cargado: ${file.name}`);
     };
     reader.readAsText(file);
@@ -138,6 +146,13 @@ function clearVerifyScript(scriptNumber) {
     } else {
         verifyScript2Content = '';
     }
+
+    // Update UI to show no file
+    const card = document.querySelector(`.script-upload-card:nth-of-type(${scriptNumber}) .file-info-card`);
+    if (card) card.classList.remove('has-file');
+
+    const clearBtn = document.getElementById(`verify-clear-${scriptNumber}`);
+    if (clearBtn) clearBtn.style.display = 'none';
 
     updateVerifyStats(scriptNumber);
     console.log(`[CLEAR] Script ${scriptNumber} limpiado`);
