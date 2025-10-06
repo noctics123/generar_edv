@@ -122,14 +122,14 @@ class DetailedDiffAnalyzer {
     }
 
     /**
-     * Analiza diferencia en detalle
+     * Analiza diferencia en detalle (OPTIMIZADO - memoria limitada)
      *
      * @param {Object} difference - Diferencia del verifier básico
-     * @param {string} script1 - Script 1 completo
-     * @param {string} script2 - Script 2 completo
+     * @param {string} script1 - Script 1 completo (OPCIONAL - solo para patrones)
+     * @param {string} script2 - Script 2 completo (OPCIONAL - solo para patrones)
      * @returns {Object} Análisis detallado
      */
-    analyzeDetailedDifference(difference, script1, script2) {
+    analyzeDetailedDifference(difference, script1 = null, script2 = null) {
         const detailed = {
             ...difference,
             changeType: this.categorizeChange(difference),
@@ -140,23 +140,40 @@ class DetailedDiffAnalyzer {
             codeSnippets: null
         };
 
-        // Si hay detalles de solo en script1 vs script2, hacer diff char-level
-        if (difference.details) {
-            const lines = this.extractLinesFromDetails(difference.details, script1, script2);
-            if (lines.script1Lines && lines.script2Lines) {
-                detailed.charDiff = this.computeCharacterDiff(lines.script1Lines, lines.script2Lines);
-                detailed.tokenDiff = this.computeTokenDiff(lines.script1Lines, lines.script2Lines);
-                detailed.codeSnippets = {
-                    script1: lines.script1Lines,
-                    script2: lines.script2Lines
-                };
+        // OPTIMIZACIÓN: Solo procesar details si son pequeños (< 5000 chars)
+        if (difference.details && difference.details.length < 5000) {
+            try {
+                const lines = this.extractLinesFromDetails(difference.details);
+                if (lines.text1 && lines.text2) {
+                    // Limitar procesamiento a primeras 10 líneas
+                    const text1Lines = lines.text1.split('\n').slice(0, 10).join('\n');
+                    const text2Lines = lines.text2.split('\n').slice(0, 10).join('\n');
+
+                    if (text1Lines.length < 1000 && text2Lines.length < 1000) {
+                        detailed.charDiff = this.computeCharacterDiff(text1Lines, text2Lines);
+                        detailed.tokenDiff = this.computeTokenDiff(text1Lines, text2Lines);
+                        detailed.codeSnippets = {
+                            script1: text1Lines,
+                            script2: text2Lines
+                        };
+                    }
+                }
+            } catch (e) {
+                console.warn('[DetailedDiffAnalyzer] Error en análisis char-level:', e);
+                // Continuar sin char diff
             }
         }
 
-        // Detectar patrones DDV→EDV
-        detailed.patternMatches = this.detectDDVEDVPatterns(difference, script1, script2);
+        // Detectar patrones DDV→EDV (solo si scripts están disponibles y son pequeños)
+        if (script1 && script2 && script1.length < 100000 && script2.length < 100000) {
+            try {
+                detailed.patternMatches = this.detectDDVEDVPatterns(difference, script1, script2);
+            } catch (e) {
+                console.warn('[DetailedDiffAnalyzer] Error en detección de patrones:', e);
+            }
+        }
 
-        // Evaluar impacto
+        // Evaluar impacto (siempre - es ligero)
         detailed.impactAssessment = this.assessImpact(detailed);
 
         return detailed;
@@ -192,27 +209,23 @@ class DetailedDiffAnalyzer {
     }
 
     /**
-     * Extrae líneas específicas de los detalles de diferencias
+     * Extrae líneas específicas de los detalles de diferencias (SIMPLIFICADO)
      */
-    extractLinesFromDetails(details, script1, script2) {
+    extractLinesFromDetails(details) {
         // Parsear detalles para obtener elementos específicos
         const onlyIn1Match = details.match(/Solo en [^:]+:\s*([^\n]+)/);
         const onlyIn2Match = details.match(/Solo en [^:]+:\s*([^\n]+)/);
 
         if (!onlyIn1Match && !onlyIn2Match) {
-            return { script1Lines: null, script2Lines: null };
+            return { text1: null, text2: null };
         }
 
-        const item1 = onlyIn1Match ? onlyIn1Match[1].trim() : '';
-        const item2 = onlyIn2Match ? onlyIn2Match[1].trim() : '';
-
-        // Buscar contexto en scripts
-        const context1 = this.findContextInScript(item1, script1, 3);
-        const context2 = this.findContextInScript(item2, script2, 3);
+        const text1 = onlyIn1Match ? onlyIn1Match[1].trim() : '';
+        const text2 = onlyIn2Match ? onlyIn2Match[1].trim() : '';
 
         return {
-            script1Lines: context1,
-            script2Lines: context2
+            text1: text1 || 'ninguno',
+            text2: text2 || 'ninguno'
         };
     }
 
@@ -234,7 +247,7 @@ class DetailedDiffAnalyzer {
     }
 
     /**
-     * Computa diff a nivel de caracteres (Myers algorithm)
+     * Computa diff a nivel de caracteres (OPTIMIZADO - limita procesamiento)
      */
     computeCharacterDiff(text1, text2) {
         if (!text1 || !text2) return null;
@@ -244,11 +257,23 @@ class DetailedDiffAnalyzer {
 
         const lineDiffs = [];
 
-        const maxLines = Math.max(lines1.length, lines2.length);
+        // OPTIMIZACIÓN: Limitar a primeras 5 líneas para evitar OOM
+        const maxLines = Math.min(5, Math.max(lines1.length, lines2.length));
 
         for (let i = 0; i < maxLines; i++) {
             const line1 = lines1[i] || '';
             const line2 = lines2[i] || '';
+
+            // OPTIMIZACIÓN: No procesar líneas muy largas (> 200 chars)
+            if (line1.length > 200 || line2.length > 200) {
+                lineDiffs.push({
+                    type: 'different',
+                    line1: line1.substring(0, 200) + (line1.length > 200 ? '...' : ''),
+                    line2: line2.substring(0, 200) + (line2.length > 200 ? '...' : ''),
+                    charChanges: null // Skip char diff for long lines
+                });
+                continue;
+            }
 
             if (line1 === line2) {
                 lineDiffs.push({
@@ -418,10 +443,47 @@ class DetailedDiffAnalyzer {
     }
 
     /**
-     * Analiza todos los differences con detalle
+     * Analiza todos los differences con detalle (OPTIMIZADO - limita procesamiento)
      */
     analyzeAll(differences, script1, script2) {
-        return differences.map(diff => this.analyzeDetailedDifference(diff, script1, script2));
+        // OPTIMIZACIÓN: Solo analizar primeras 20 diferencias para evitar OOM
+        const maxDiffs = 20;
+        const diffsToAnalyze = differences.slice(0, maxDiffs);
+
+        console.log(`[DetailedDiffAnalyzer] Analizando ${diffsToAnalyze.length} de ${differences.length} diferencias`);
+
+        // Procesar diferencias
+        const analyzed = diffsToAnalyze.map((diff, index) => {
+            try {
+                return this.analyzeDetailedDifference(diff, script1, script2);
+            } catch (e) {
+                console.warn(`[DetailedDiffAnalyzer] Error al analizar diff ${index}:`, e);
+                // Retornar diferencia original sin análisis detallado
+                return {
+                    ...diff,
+                    changeType: this.categorizeChange(diff),
+                    impactAssessment: this.assessImpact({
+                        changeType: this.categorizeChange(diff),
+                        severity: diff.severity
+                    })
+                };
+            }
+        });
+
+        // Si hay más diferencias, agregarlas sin análisis detallado
+        if (differences.length > maxDiffs) {
+            const remaining = differences.slice(maxDiffs).map(diff => ({
+                ...diff,
+                changeType: this.categorizeChange(diff),
+                impactAssessment: this.assessImpact({
+                    changeType: this.categorizeChange(diff),
+                    severity: diff.severity
+                })
+            }));
+            return [...analyzed, ...remaining];
+        }
+
+        return analyzed;
     }
 }
 
