@@ -171,6 +171,10 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s;
+    /* CRITICAL: Prevent card expansion - constrain total height */
+    display: flex;
+    flex-direction: column;
+    max-height: 650px; /* h3 + upload + editor(400px) + footer + padding */
 }
 
 .script-upload-card:hover {
@@ -423,14 +427,18 @@
 /* Editor Enhancements for Verification */
 /* CRITICAL: Fix .editor-container height to prevent expansion */
 .script-upload-card .editor-container {
-    height: auto;
-    max-height: none;
+    flex: 0 0 auto; /* Don't grow */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flex children */
 }
 
 .script-upload-card .editor-container .code-editor-wrapper {
     height: 400px !important;
+    min-height: 400px !important;
     max-height: 400px !important;
     overflow: auto !important;
+    flex: 0 0 400px; /* Fixed 400px, no grow/shrink */
 }
 
 /* CRITICAL: Override base .code-editor rules to prevent expansion */
