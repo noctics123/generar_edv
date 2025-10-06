@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     initializeSyntaxHighlighting();
     initializeVerificationSection(); // Initialize verification section
+    initializeComparisonModal(); // Initialize comparison modal
     initializeMainNavigation(); // Initialize page navigation
     console.log('✅ EDV Converter initialized');
 });

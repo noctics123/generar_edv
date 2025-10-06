@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/main.css">
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/diff.css">
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/verification.css">
+    <link rel="stylesheet" href="edv-converter-webapp/src/styles/comparison-modal.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.ico">
@@ -505,7 +506,10 @@
                 </div>
 
                 <!-- Verify Button -->
-                <div class="action-buttons">
+                <div class="action-buttons" style="display: flex; gap: 1rem;">
+                    <button id="compare-side-by-side-btn" class="btn btn-secondary btn-large">
+                        📊 Comparar Lado a Lado
+                    </button>
                     <button id="verify-scripts-btn" class="btn btn-primary btn-large">
                         🔍 Verificar Similitud
                     </button>
@@ -545,18 +549,44 @@
         </div>
     </footer>
 
+    <!-- Comparison Modal (Fullscreen) -->
+    <div id="comparison-modal" class="comparison-modal">
+        <div class="comparison-modal-header">
+            <h2 class="comparison-modal-title">Comparación Lado a Lado</h2>
+            <button id="comparison-modal-close" class="comparison-modal-close">
+                <span>Cerrar</span>
+                <kbd>ESC</kbd>
+            </button>
+        </div>
+        <div class="comparison-modal-content">
+            <div class="comparison-panel">
+                <div class="comparison-panel-header" id="comparison-header-1">Script 1</div>
+                <div class="comparison-panel-content" id="comparison-content-1">
+                    <pre class="comparison-code" id="comparison-code-1"></pre>
+                </div>
+            </div>
+            <div class="comparison-panel">
+                <div class="comparison-panel-header" id="comparison-header-2">Script 2</div>
+                <div class="comparison-panel-content" id="comparison-content-2">
+                    <pre class="comparison-code" id="comparison-code-2"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Prism.js Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 
     <!-- Scripts -->
-    <script src="edv-converter-webapp/src/utils/edvConverter.js?v=2.1"></script>
-    <script src="edv-converter-webapp/src/utils/validatorRiguroso.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/utils/edvConverter.js?v=2.2"></script>
+    <script src="edv-converter-webapp/src/utils/validatorRiguroso.js?v=2.2"></script>
     <!-- Verificador 100% JavaScript (sin servidor) -->
-    <script src="edv-converter-webapp/src/script_verifier.js?v=2.1"></script>
-    <script src="edv-converter-webapp/src/verification_client.js?v=2.1"></script>
-    <script src="edv-converter-webapp/src/verification_ui.js?v=2.1"></script>
-    <script src="edv-converter-webapp/src/app.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/script_verifier.js?v=2.2"></script>
+    <script src="edv-converter-webapp/src/verification_client.js?v=2.2"></script>
+    <script src="edv-converter-webapp/src/verification_ui.js?v=2.2"></script>
+    <script src="edv-converter-webapp/src/comparison-modal.js?v=2.2"></script>
+    <script src="edv-converter-webapp/src/app.js?v=2.2"></script>
 </body>
 </html>
 

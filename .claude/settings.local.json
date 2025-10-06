@@ -19,7 +19,12 @@
       "Bash(git restore:*)",
       "Bash(git log:*)",
       "Bash(curl -s \"https://raw.githubusercontent.com/noctics123/generar_edv/main/edv-converter-webapp/src/app.js\")",
-      "Bash(curl -s \"https://raw.githubusercontent.com/noctics123/generar_edv/main/index.html\")"
+      "Bash(curl -s \"https://raw.githubusercontent.com/noctics123/generar_edv/main/index.html\")",
+      "Bash(pip install:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
