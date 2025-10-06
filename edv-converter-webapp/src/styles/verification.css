@@ -172,9 +172,10 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     transition: box-shadow 0.2s;
     /* CRITICAL: Prevent card expansion - constrain total height */
-    display: flex;
-    flex-direction: column;
-    max-height: 650px; /* h3 + upload + editor(400px) + footer + padding */
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 650px !important; /* h3 + upload + editor(400px) + footer + padding */
+    overflow: hidden !important; /* Clip any overflow */
 }
 
 .script-upload-card:hover {
@@ -427,10 +428,11 @@
 /* Editor Enhancements for Verification */
 /* CRITICAL: Fix .editor-container height to prevent expansion */
 .script-upload-card .editor-container {
-    flex: 0 0 auto; /* Don't grow */
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Important for flex children */
+    flex: 0 0 auto !important; /* Don't grow */
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important; /* Important for flex children */
+    overflow: hidden !important;
 }
 
 .script-upload-card .editor-container .code-editor-wrapper {
@@ -438,7 +440,7 @@
     min-height: 400px !important;
     max-height: 400px !important;
     overflow: auto !important;
-    flex: 0 0 400px; /* Fixed 400px, no grow/shrink */
+    flex: 0 0 400px !important; /* Fixed 400px, no grow/shrink */
 }
 
 /* CRITICAL: Override base .code-editor rules to prevent expansion */
@@ -449,6 +451,18 @@
     height: 100% !important;
     resize: none !important;
     overflow: hidden !important;
+    display: block !important;
+}
+
+/* CRITICAL: Prevent code element inside pre from expanding */
+#verify-script-1.code-editor code,
+#verify-script-2.code-editor code {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
 }
 
 /* Scrollbar Styling */
