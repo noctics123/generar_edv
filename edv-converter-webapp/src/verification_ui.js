@@ -139,7 +139,7 @@ function useCurrentConversion() {
         block: 'start'
     });
 
-    showNotification('[OK] Scripts de conversion cargados para verificacion', 'success');
+    console.log('[OK] Scripts de conversion cargados para verificacion');
 }
 
 /**
@@ -173,7 +173,7 @@ async function loadVerificationExamples() {
         updateVerifyStats(1);
         updateVerifyStats(2);
 
-        showNotification('[OK] Ejemplos cargados: Agente vs Cajero', 'success');
+        console.log('[OK] Ejemplos cargados: Agente vs Cajero');
 
     } catch (error) {
         console.error('Error cargando ejemplos:', error);
@@ -207,7 +207,7 @@ function swapVerifyScripts() {
     updateVerifyStats(1);
     updateVerifyStats(2);
 
-    showNotification('Scripts intercambiados', 'info');
+    console.log('[INFO] Scripts intercambiados');
 }
 
 /**
@@ -280,13 +280,13 @@ async function verifyScriptsSimilarity() {
 
         if (criticalCount === 0 && score >= 95) {
             console.log('[OK] Verificacion APROBADA');
-            showNotification(`[OK] Scripts Equivalentes (${score}%)`, 'success');
+            console.log(`[OK] Scripts Equivalentes (${score}%)`);
         } else if (criticalCount === 0 && score >= 80) {
             console.log('[WARN] Verificacion con ADVERTENCIAS');
-            showNotification(`[WARN] Scripts Similares con Diferencias (${score}%)`, 'warning');
+            console.log(`[WARN] Scripts Similares con Diferencias (${score}%)`);
         } else {
             console.log('[ERROR] Verificacion RECHAZADA');
-            showNotification(`[ERROR] Scripts NO Equivalentes - ${criticalCount} Errores Criticos`, 'error');
+            console.log(`[ERROR] Scripts NO Equivalentes - ${criticalCount} Errores Criticos`);
         }
 
         // Log detallado
