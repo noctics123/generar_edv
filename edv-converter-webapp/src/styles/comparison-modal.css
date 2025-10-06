@@ -280,3 +280,38 @@
 .sync-scroll-indicator.show {
     opacity: 1;
 }
+
+/* Python Syntax Highlighting - VSCode Dark+ Theme */
+.token-keyword {
+    color: #c586c0; /* Purple for keywords */
+    font-weight: 600;
+}
+
+.token-builtin {
+    color: #dcdcaa; /* Yellow for built-in functions */
+}
+
+.token-function {
+    color: #dcdcaa; /* Yellow for function calls */
+}
+
+.token-string {
+    color: #ce9178; /* Orange/brown for strings */
+}
+
+.token-comment {
+    color: #6a9955; /* Green for comments */
+    font-style: italic;
+}
+
+.token-number {
+    color: #b5cea8; /* Light green for numbers */
+}
+
+.token-decorator {
+    color: #c586c0; /* Purple for decorators */
+}
+
+.token-self {
+    color: #9cdcfe; /* Light blue for self parameter */
+}

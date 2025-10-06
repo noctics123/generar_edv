@@ -182,12 +182,12 @@ function renderDiffSide(diffOps, side) {
             }
         }
 
-        const escapedLine = escapeHtml(op.content);
+        const highlightedLine = highlightPythonSyntax(op.content);
 
         html += `<div class="diff-line ${cssClass}" data-diff-index="${mappedIndex}">`;
         html += `<span class="line-number">${lineNumber}</span>`;
         html += `<span class="line-marker">${marker}</span>`;
-        html += `<span class="line-content">${escapedLine || ' '}</span>`;
+        html += `<span class="line-content">${highlightedLine}</span>`;
         html += `</div>\n`;
     });
 
@@ -271,4 +271,65 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Syntax highlighting para Python - VSCode Dark+ Theme
+ */
+function highlightPythonSyntax(code) {
+    if (!code || code.trim() === '') return ' ';
+
+    // Python keywords
+    const keywords = /\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|lambda|yield|async|await|pass|break|continue|raise|assert|del|global|nonlocal|in|is|not|and|or|None|True|False)\b/g;
+
+    // Built-in functions
+    const builtins = /\b(print|len|range|str|int|float|list|dict|set|tuple|bool|type|isinstance|enumerate|zip|map|filter|sorted|sum|max|min|abs|all|any|open|read|write|split|join|format|append|extend|insert|remove|pop|get|keys|values|items)\b/g;
+
+    // Strings (single, double, triple)
+    const strings = /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g;
+
+    // Comments
+    const comments = /(#.*$)/gm;
+
+    // Numbers
+    const numbers = /\b(\d+\.?\d*)\b/g;
+
+    // Function calls (function followed by parenthesis)
+    const functionCalls = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g;
+
+    // Decorators
+    const decorators = /(@[a-zA-Z_][a-zA-Z0-9_]*)/g;
+
+    // Self parameter
+    const selfParam = /\bself\b/g;
+
+    // Escape HTML first
+    let highlighted = escapeHtml(code);
+
+    // Apply highlighting in order (most specific to least specific)
+    // 1. Comments (highest priority)
+    highlighted = highlighted.replace(comments, '<span class="token-comment">$1</span>');
+
+    // 2. Strings (before keywords to avoid highlighting keywords in strings)
+    highlighted = highlighted.replace(strings, '<span class="token-string">$1</span>');
+
+    // 3. Decorators
+    highlighted = highlighted.replace(decorators, '<span class="token-decorator">$1</span>');
+
+    // 4. Keywords
+    highlighted = highlighted.replace(keywords, '<span class="token-keyword">$1</span>');
+
+    // 5. Built-in functions
+    highlighted = highlighted.replace(builtins, '<span class="token-builtin">$1</span>');
+
+    // 6. Function calls
+    highlighted = highlighted.replace(functionCalls, '<span class="token-function">$1</span>');
+
+    // 7. Numbers
+    highlighted = highlighted.replace(numbers, '<span class="token-number">$1</span>');
+
+    // 8. Self parameter
+    highlighted = highlighted.replace(selfParam, '<span class="token-self">self</span>');
+
+    return highlighted;
 }
