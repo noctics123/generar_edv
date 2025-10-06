@@ -153,7 +153,7 @@ function renderDiffSide(diffOps, side) {
 
         if (op.type === 'same') {
             cssClass = 'line-same';
-            marker = ' ';
+            marker = '='; // Mostrar = para líneas iguales
             lineNumberA++;
             lineNumberB++;
             lineNumber = side === 'left' ? lineNumberA : lineNumberB;

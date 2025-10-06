@@ -138,87 +138,68 @@
     word-wrap: break-word;
 }
 
-/* Line Same - No differences - SIN COLOR DE FONDO */
+/* Line Same - VERDE para líneas idénticas/similares */
 .line-same {
-    background: transparent;
+    background: rgba(22, 82, 44, 0.25); /* Verde más visible para similares */
     cursor: pointer;
     transition: background 0.1s;
-    border-left: 3px solid transparent;
+    border-left: 3px solid #587c0c;
 }
 
 .line-same:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(22, 82, 44, 0.35);
 }
 
 .line-same .line-marker {
-    color: transparent; /* No mostrar marker para líneas idénticas */
+    color: #89d185;
+    content: '='; /* Mostrar = para líneas iguales */
 }
 
 .line-same .line-number {
-    color: #858585; /* Color gris neutro */
+    color: #89d185;
+    background: rgba(22, 82, 44, 0.15);
 }
 
-/* Line Modified - Different content - VSCode Dark+ Yellow */
-.line-modified {
-    background: rgba(101, 101, 23, 0.4); /* VSCode modified bg */
-    border-left: 3px solid #e2c08d;
-    cursor: pointer;
-    transition: background 0.1s;
-}
-
-.line-modified:hover {
-    background: rgba(101, 101, 23, 0.6);
-}
-
-.line-modified .line-marker {
-    color: #e2c08d;
-}
-
-.line-modified .line-number {
-    color: #e2c08d;
-    background: rgba(101, 101, 23, 0.2);
-}
-
-/* Line Added - Green - VSCode Dark+ */
+/* Line Added - Gris claro (solo existe en un lado) */
 .line-added {
-    background: rgba(22, 82, 44, 0.4); /* VSCode added bg #16522c */
-    border-left: 3px solid #587c0c;
+    background: rgba(100, 100, 100, 0.15); /* Gris muy sutil */
+    border-left: 3px solid #666;
     cursor: pointer;
     transition: background 0.1s;
 }
 
 .line-added:hover {
-    background: rgba(22, 82, 44, 0.6);
+    background: rgba(100, 100, 100, 0.25);
 }
 
 .line-added .line-marker {
-    color: #89d185;
+    color: #999;
 }
 
 .line-added .line-number {
-    color: #89d185;
-    background: rgba(22, 82, 44, 0.2);
+    color: #999;
+    background: rgba(100, 100, 100, 0.1);
 }
 
-/* Line Removed - Red - VSCode Dark+ */
+/* Line Removed - Gris claro (solo existe en un lado) */
 .line-removed {
-    background: rgba(101, 31, 31, 0.4); /* VSCode removed bg #651f1f */
-    border-left: 3px solid #a1260d;
+    background: rgba(100, 100, 100, 0.15); /* Gris muy sutil */
+    border-left: 3px solid #666;
     cursor: pointer;
     transition: background 0.1s;
 }
 
 .line-removed:hover {
-    background: rgba(101, 31, 31, 0.6);
+    background: rgba(100, 100, 100, 0.25);
 }
 
 .line-removed .line-marker {
-    color: #f48771;
+    color: #999;
 }
 
 .line-removed .line-number {
-    color: #f48771;
-    background: rgba(101, 31, 31, 0.2);
+    color: #999;
+    background: rgba(100, 100, 100, 0.1);
 }
 
 /* Highlighted Line - When clicked - COLOR DISTINTO PARA SELECCIÓN */
