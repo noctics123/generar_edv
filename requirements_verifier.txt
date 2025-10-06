@@ -1,0 +1,9 @@
+# Script Verifier - Requirements
+# ==============================
+
+# Core dependencies
+flask==3.0.0
+flask-cors==4.0.0
+
+# Optional (for enhanced features)
+# colorama==0.4.6  # For colored terminal output on Windows
