@@ -766,10 +766,13 @@ body {
     line-height: 1.6;
     border: none;
     outline: none;
-    min-height: auto;
     box-sizing: border-box;
     white-space: pre-wrap;
     word-wrap: break-word;
+    /* CRITICAL: Prevent expansion beyond parent container */
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
 }
 
 .code-editor-wrapper pre.code-editor:focus {
