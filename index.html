@@ -42,11 +42,28 @@
                 </nav>
             </div>
         </div>
+
+        <!-- Main Navigation Tabs -->
+        <div class="main-tabs-container">
+            <div class="container">
+                <div class="main-tabs">
+                    <button class="main-tab active" data-page="converter">
+                        🔄 Conversor DDV → EDV
+                    </button>
+                    <button class="main-tab" data-page="verifier">
+                        🔍 Verificador de Similitud
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content -->
     <main class="main">
         <div class="container">
+
+            <!-- PAGE: Converter (DDV → EDV) -->
+            <div id="page-converter" class="main-page active">
 
             <!-- Instructions Banner -->
             <div class="banner">
@@ -329,9 +346,15 @@
 
             </section>
 
-            <!-- Verification Section (Independent) -->
+            </div>
+            <!-- END PAGE: Converter -->
+
+            <!-- PAGE: Verifier (Script Similarity) -->
+            <div id="page-verifier" class="main-page">
+
+            <!-- Verification Section -->
             <section class="section" id="verification-section">
-                <h2>🔍 3. Verificación de Similitud entre Scripts</h2>
+                <h2>🔍 Verificación de Similitud entre Scripts</h2>
 
                 <div class="banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <h3 style="color: white; margin-bottom: 0.5rem;">📊 Análisis Multi-Nivel de Scripts</h3>
@@ -471,6 +494,9 @@
                 </div>
 
             </section>
+
+            </div>
+            <!-- END PAGE: Verifier -->
 
         </div>
     </main>

@@ -4,6 +4,75 @@
  * Estilos específicos para la sección de verificación de similitud
  */
 
+/* Main Navigation Tabs */
+.main-tabs-container {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.main-tabs {
+    display: flex;
+    gap: 0;
+}
+
+.main-tab {
+    flex: 1;
+    padding: 1rem 2rem;
+    border: none;
+    background: white;
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+    position: relative;
+}
+
+.main-tab:hover {
+    background: #f9fafb;
+    color: #1f2937;
+}
+
+.main-tab.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, white 100%);
+}
+
+.main-tab.active::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Main Pages */
+.main-page {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.main-page.active {
+    display: block;
+}
+
+@keyframes fadeInPage {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Radio Card Component */
 .radio-card {
     flex: 1;

@@ -15,8 +15,38 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     initializeSyntaxHighlighting();
     initializeVerificationSection(); // Initialize verification section
+    initializeMainNavigation(); // Initialize page navigation
     console.log('✅ EDV Converter initialized');
 });
+
+// ===== MAIN NAVIGATION =====
+function initializeMainNavigation() {
+    const mainTabs = document.querySelectorAll('.main-tab');
+
+    mainTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const page = tab.dataset.page;
+            switchMainPage(page);
+        });
+    });
+}
+
+function switchMainPage(pageName) {
+    // Update tabs
+    document.querySelectorAll('.main-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.page === pageName);
+    });
+
+    // Update pages
+    document.querySelectorAll('.main-page').forEach(page => {
+        page.classList.toggle('active', page.id === `page-${pageName}`);
+    });
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    console.log(`📄 Página cambiada: ${pageName}`);
+}
 
 // ===== EVENT LISTENERS =====
 function initializeEventListeners() {

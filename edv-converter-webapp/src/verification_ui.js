@@ -310,7 +310,55 @@ O usa el quick start:
 
     } catch (error) {
         console.error('❌ Error en verificación:', error);
-        alert(`❌ Error al verificar scripts:\n\n${error.message}`);
+
+        // Logging detallado del error
+        const errorDetails = {
+            message: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString(),
+            mode: mode,
+            script1Length: verifyScript1Content.length,
+            script2Length: verifyScript2Content.length,
+            serverUrl: verificationClient.serverUrl
+        };
+
+        console.group('🔴 Error Detallado de Verificación');
+        console.error('Mensaje:', errorDetails.message);
+        console.error('Timestamp:', errorDetails.timestamp);
+        console.error('Modo:', errorDetails.mode);
+        console.error('Script 1:', errorDetails.script1Length, 'caracteres');
+        console.error('Script 2:', errorDetails.script2Length, 'caracteres');
+        console.error('Servidor:', errorDetails.serverUrl);
+        console.error('Stack trace:', errorDetails.stack);
+        console.groupEnd();
+
+        // Mostrar error detallado al usuario
+        let userMessage = `❌ Error al verificar scripts:\n\n${error.message}\n\n`;
+
+        if (error.message.includes('Servidor de verificación no disponible')) {
+            userMessage += `📋 Pasos para solucionar:\n`;
+            userMessage += `1. Abre una terminal\n`;
+            userMessage += `2. Navega a la carpeta del proyecto\n`;
+            userMessage += `3. Ejecuta: python verification_server.py\n`;
+            userMessage += `4. Espera a ver "Running on http://0.0.0.0:5000"\n`;
+            userMessage += `5. Vuelve a intentar la verificación\n\n`;
+            userMessage += `💡 O usa el quick start: .\\quick_start_verifier.bat`;
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            userMessage += `🌐 Error de red detectado.\n\n`;
+            userMessage += `Posibles causas:\n`;
+            userMessage += `• Servidor no está corriendo\n`;
+            userMessage += `• Firewall bloqueando puerto 5000\n`;
+            userMessage += `• CORS no configurado correctamente\n\n`;
+            userMessage += `Verifica la consola (F12) para más detalles.`;
+        } else {
+            userMessage += `Detalles técnicos:\n`;
+            userMessage += `• Modo: ${mode}\n`;
+            userMessage += `• Script 1: ${errorDetails.script1Length} caracteres\n`;
+            userMessage += `• Script 2: ${errorDetails.script2Length} caracteres\n\n`;
+            userMessage += `Verifica la consola del navegador (F12) para el stack trace completo.`;
+        }
+
+        alert(userMessage);
     } finally {
         // Restaurar botón
         verifyBtn.innerHTML = originalText;
