@@ -9,6 +9,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/main.css">
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/diff.css">
+    <link rel="stylesheet" href="edv-converter-webapp/src/styles/verification.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.ico">
@@ -328,6 +329,149 @@
 
             </section>
 
+            <!-- Verification Section (Independent) -->
+            <section class="section" id="verification-section">
+                <h2>🔍 3. Verificación de Similitud entre Scripts</h2>
+
+                <div class="banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3 style="color: white; margin-bottom: 0.5rem;">📊 Análisis Multi-Nivel de Scripts</h3>
+                    <p style="color: rgba(255,255,255,0.9); margin: 0;">
+                        Compara dos scripts PySpark para validar equivalencia estructural, lógica de negocio, flujo de datos e integridad.
+                        Perfecto para verificar conversiones DDV→EDV o comparar scripts de misma familia.
+                    </p>
+                </div>
+
+                <!-- Verification Mode Toggle -->
+                <div class="verification-mode-toggle" style="margin-bottom: 2rem;">
+                    <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <label style="display: block; margin-bottom: 1rem; font-weight: 600; color: #1f2937;">
+                            🎯 Modo de Verificación:
+                        </label>
+                        <div style="display: flex; gap: 1rem;">
+                            <label class="radio-card">
+                                <input type="radio" name="verification-mode" value="ddv-edv" checked>
+                                <span class="radio-card-content">
+                                    <span class="radio-icon">🔄</span>
+                                    <span class="radio-title">DDV vs EDV</span>
+                                    <span class="radio-description">Validar conversión con diferencias esperadas/inesperadas</span>
+                                </span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="verification-mode" value="individual">
+                                <span class="radio-card-content">
+                                    <span class="radio-icon">📝</span>
+                                    <span class="radio-title">Scripts Individuales</span>
+                                    <span class="radio-description">Comparar dos scripts cualesquiera sin contexto DDV/EDV</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dual Script Upload -->
+                <div class="dual-script-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+
+                    <!-- Script 1 -->
+                    <div class="script-upload-card">
+                        <h3 style="margin-bottom: 1rem;">📄 Script 1</h3>
+
+                        <!-- File Upload -->
+                        <div class="input-method" style="margin-bottom: 1rem;">
+                            <label for="verify-file-1" class="upload-label">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Cargar Script 1</span>
+                            </label>
+                            <input type="file" id="verify-file-1" accept=".py" hidden>
+                            <p class="file-name" id="verify-file-name-1">Ningún archivo seleccionado</p>
+                        </div>
+
+                        <!-- Code Editor -->
+                        <div class="editor-container">
+                            <div class="editor-header">
+                                <span>Script 1</span>
+                                <button class="btn btn-sm" id="verify-clear-1">🗑️ Limpiar</button>
+                            </div>
+                            <div class="code-editor-wrapper">
+                                <pre id="verify-script-1" class="code-editor" contenteditable="true" spellcheck="false" data-placeholder="Pega el script 1 aquí..."><code class="language-python"></code></pre>
+                            </div>
+                            <div class="editor-footer">
+                                <span id="verify-lines-1">0 líneas</span>
+                                <span id="verify-size-1">0 KB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Script 2 -->
+                    <div class="script-upload-card">
+                        <h3 style="margin-bottom: 1rem;">📄 Script 2</h3>
+
+                        <!-- File Upload -->
+                        <div class="input-method" style="margin-bottom: 1rem;">
+                            <label for="verify-file-2" class="upload-label">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Cargar Script 2</span>
+                            </label>
+                            <input type="file" id="verify-file-2" accept=".py" hidden>
+                            <p class="file-name" id="verify-file-name-2">Ningún archivo seleccionado</p>
+                        </div>
+
+                        <!-- Code Editor -->
+                        <div class="editor-container">
+                            <div class="editor-header">
+                                <span>Script 2</span>
+                                <button class="btn btn-sm" id="verify-clear-2">🗑️ Limpiar</button>
+                            </div>
+                            <div class="code-editor-wrapper">
+                                <pre id="verify-script-2" class="code-editor" contenteditable="true" spellcheck="false" data-placeholder="Pega el script 2 aquí..."><code class="language-python"></code></pre>
+                            </div>
+                            <div class="editor-footer">
+                                <span id="verify-lines-2">0 líneas</span>
+                                <span id="verify-size-2">0 KB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Quick Actions -->
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+                    <h4 style="margin: 0 0 1rem 0;">⚡ Acciones Rápidas</h4>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" id="verify-use-current-conversion">
+                            🔄 Usar Conversión Actual (DDV → EDV)
+                        </button>
+                        <button class="btn btn-secondary" id="verify-load-examples">
+                            📂 Cargar Ejemplos (Agente vs Cajero)
+                        </button>
+                        <button class="btn btn-secondary" id="verify-swap-scripts">
+                            ↔️ Intercambiar Scripts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Verify Button -->
+                <div class="action-buttons">
+                    <button id="verify-scripts-btn" class="btn btn-primary btn-large">
+                        🔍 Verificar Similitud
+                    </button>
+                </div>
+
+                <!-- Verification Results (Hidden by default) -->
+                <div id="verification-results" style="display: none; margin-top: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem;">📊 Resultados de Verificación</h3>
+                    <div id="verification-container"></div>
+                </div>
+
+            </section>
+
         </div>
     </main>
 
@@ -345,6 +489,8 @@
     <!-- Scripts -->
     <script src="edv-converter-webapp/src/utils/edvConverter.js"></script>
     <script src="edv-converter-webapp/src/utils/validatorRiguroso.js"></script>
+    <script src="edv-converter-webapp/src/verification_client.js"></script>
+    <script src="edv-converter-webapp/src/verification_ui.js"></script>
     <script src="edv-converter-webapp/src/app.js"></script>
 </body>
 </html>

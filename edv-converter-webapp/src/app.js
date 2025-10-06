@@ -14,6 +14,7 @@ let editableParams = {};
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     initializeSyntaxHighlighting();
+    initializeVerificationSection(); // Initialize verification section
     console.log('✅ EDV Converter initialized');
 });
 
