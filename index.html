@@ -352,16 +352,41 @@
             <!-- PAGE: Verifier (Script Similarity) -->
             <div id="page-verifier" class="main-page">
 
+            <!-- Server Status Banner -->
+            <div id="server-status-banner" class="server-status-banner" style="display: none;">
+                <div class="container">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="server-status-indicator"></div>
+                        <div style="flex: 1;">
+                            <strong id="server-status-text">Verificando servidor...</strong>
+                            <p id="server-status-details" style="margin: 0.25rem 0 0 0; font-size: 0.875rem; opacity: 0.9;"></p>
+                        </div>
+                        <button id="retry-server-connection" class="btn btn-sm" style="display: none; background: white; color: #667eea;">
+                            🔄 Reintentar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Verification Section -->
             <section class="section" id="verification-section">
                 <h2>🔍 Verificación de Similitud entre Scripts</h2>
 
+                <!-- Instructions Banner -->
                 <div class="banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     <h3 style="color: white; margin-bottom: 0.5rem;">📊 Análisis Multi-Nivel de Scripts</h3>
-                    <p style="color: rgba(255,255,255,0.9); margin: 0;">
+                    <p style="color: rgba(255,255,255,0.9); margin: 0 0 1rem 0;">
                         Compara dos scripts PySpark para validar equivalencia estructural, lógica de negocio, flujo de datos e integridad.
                         Perfecto para verificar conversiones DDV→EDV o comparar scripts de misma familia.
                     </p>
+                    <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; backdrop-filter: blur(10px);">
+                        <strong style="color: white; display: block; margin-bottom: 0.5rem;">⚙️ Requisito: Servidor de Verificación</strong>
+                        <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 0.9rem;">
+                            Esta herramienta requiere que el servidor de verificación esté corriendo.<br>
+                            <strong>Cómo iniciar:</strong> Ejecuta <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">python verification_server.py</code>
+                            en una terminal o usa <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.5rem; border-radius: 4px;">.\quick_start_verifier.bat</code>
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Verification Mode Toggle -->

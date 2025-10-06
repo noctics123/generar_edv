@@ -45,8 +45,77 @@ function switchMainPage(pageName) {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Si cambiamos a verificador, verificar servidor
+    if (pageName === 'verifier') {
+        checkServerStatus();
+    }
+
     console.log(`📄 Página cambiada: ${pageName}`);
 }
+
+// ===== SERVER STATUS CHECK =====
+async function checkServerStatus() {
+    const banner = document.getElementById('server-status-banner');
+    const statusText = document.getElementById('server-status-text');
+    const statusDetails = document.getElementById('server-status-details');
+    const retryBtn = document.getElementById('retry-server-connection');
+
+    if (!banner || !verificationClient) return;
+
+    // Mostrar banner
+    banner.style.display = 'block';
+    banner.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+    banner.style.color = 'white';
+    banner.style.padding = '1rem 0';
+    banner.style.marginBottom = '2rem';
+    banner.style.borderRadius = '8px';
+    banner.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.3)';
+
+    statusText.textContent = 'Verificando servidor...';
+    statusDetails.textContent = 'Conectando a http://localhost:5000';
+    retryBtn.style.display = 'none';
+
+    try {
+        const isHealthy = await verificationClient.checkHealth();
+
+        if (isHealthy) {
+            // Servidor online
+            banner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            statusText.textContent = '✅ Servidor de Verificación Online';
+            statusDetails.textContent = 'Listo para verificar scripts';
+            retryBtn.style.display = 'none';
+
+            // Auto-hide después de 3 segundos
+            setTimeout(() => {
+                banner.style.display = 'none';
+            }, 3000);
+
+            console.log('✅ Servidor de verificación disponible');
+        } else {
+            throw new Error('Health check falló');
+        }
+    } catch (error) {
+        // Servidor offline
+        banner.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+        statusText.textContent = '❌ Servidor de Verificación Offline';
+        statusDetails.innerHTML = `
+            No se pudo conectar al servidor.
+            <strong>Ejecuta:</strong>
+            <code style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.5rem; border-radius: 4px; margin-left: 0.5rem;">python verification_server.py</code>
+        `;
+        retryBtn.style.display = 'inline-block';
+
+        console.error('❌ Servidor de verificación no disponible');
+    }
+}
+
+// Retry server connection
+document.addEventListener('DOMContentLoaded', () => {
+    const retryBtn = document.getElementById('retry-server-connection');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', checkServerStatus);
+    }
+});
 
 // ===== EVENT LISTENERS =====
 function initializeEventListeners() {
