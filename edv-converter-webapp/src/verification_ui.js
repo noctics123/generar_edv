@@ -233,18 +233,8 @@ async function verifyScriptsSimilarity() {
     verifyBtn.disabled = true;
 
     try {
-        // Verificar conexión con servidor
-        const isHealthy = await verificationClient.checkHealth();
-
-        if (!isHealthy) {
-            throw new Error(`Servidor de verificación no disponible.
-
-Asegúrate de que el servidor esté corriendo:
-  python verification_server.py
-
-O usa el quick start:
-  .\\quick_start_verifier.bat`);
-        }
+        // Modo local - sin servidor necesario
+        console.log('[INFO] Usando verificador local (sin servidor)');
 
         // Obtener nombres de archivos
         const script1Name = document.getElementById('verify-file-name-1').textContent;
@@ -334,29 +324,11 @@ O usa el quick start:
 
         // Mostrar error detallado al usuario
         let userMessage = `[ERROR] Error al verificar scripts:\n\n${error.message}\n\n`;
-
-        if (error.message.includes('Servidor de verificación no disponible')) {
-            userMessage += `Pasos para solucionar:\n`;
-            userMessage += `1. Abre una terminal\n`;
-            userMessage += `2. Navega a la carpeta del proyecto\n`;
-            userMessage += `3. Ejecuta: python verification_server.py\n`;
-            userMessage += `4. Espera a ver "Running on http://0.0.0.0:5000"\n`;
-            userMessage += `5. Vuelve a intentar la verificacion\n\n`;
-            userMessage += `O usa el quick start: .\\quick_start_verifier.bat`;
-        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            userMessage += `Error de red detectado.\n\n`;
-            userMessage += `Posibles causas:\n`;
-            userMessage += `- Servidor no esta corriendo\n`;
-            userMessage += `- Firewall bloqueando puerto 5000\n`;
-            userMessage += `- CORS no configurado correctamente\n\n`;
-            userMessage += `Verifica la consola (F12) para mas detalles.`;
-        } else {
-            userMessage += `Detalles tecnicos:\n`;
-            userMessage += `- Modo: ${mode}\n`;
-            userMessage += `- Script 1: ${errorDetails.script1Length} caracteres\n`;
-            userMessage += `- Script 2: ${errorDetails.script2Length} caracteres\n\n`;
-            userMessage += `Verifica la consola del navegador (F12) para el stack trace completo.`;
-        }
+        userMessage += `Detalles tecnicos:\n`;
+        userMessage += `- Modo: ${mode}\n`;
+        userMessage += `- Script 1: ${errorDetails.script1Length} caracteres\n`;
+        userMessage += `- Script 2: ${errorDetails.script2Length} caracteres\n\n`;
+        userMessage += `Verifica la consola del navegador (F12) para el stack trace completo.`;
 
         alert(userMessage);
     } finally {

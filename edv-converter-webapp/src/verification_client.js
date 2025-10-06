@@ -2,40 +2,34 @@
  * Verification Client - Cliente JavaScript para Script Verifier
  * ==============================================================
  *
- * Cliente para comunicarse con el servidor de verificación de scripts.
- * Se integra con la app web EDV Converter.
+ * Cliente que usa ScriptVerifier.js local (sin servidor backend).
+ * 100% JavaScript - Compatible con GitHub Pages.
  *
  * Autor: Claude Code
- * Versión: 1.0
+ * Version: 2.0 (Pure JS - No Server)
  */
 
 class VerificationClient {
-    constructor(serverUrl = 'http://localhost:5000') {
-        this.serverUrl = serverUrl;
+    constructor() {
+        this.verifier = new ScriptVerifier();
         this.lastVerificationReport = null;
     }
 
     /**
-     * Verifica conexión con el servidor
+     * Health check (siempre retorna true ya que es local)
      * @returns {Promise<boolean>}
      */
     async checkHealth() {
-        try {
-            const response = await fetch(`${this.serverUrl}/health`);
-            const data = await response.json();
-            return data.status === 'ok';
-        } catch (error) {
-            console.error('❌ Error conectando con servidor de verificación:', error);
-            return false;
-        }
+        // Modo local - siempre disponible
+        return Promise.resolve(true);
     }
 
     /**
      * Verifica dos scripts
      * @param {string} script1 - Contenido del primer script
      * @param {string} script2 - Contenido del segundo script
-     * @param {Object} options - Opciones de verificación
-     * @returns {Promise<Object>} - Reporte de verificación
+     * @param {Object} options - Opciones de verificacion
+     * @returns {Promise<Object>} - Reporte de verificacion
      */
     async verifyScripts(script1, script2, options = {}) {
         const {
@@ -45,71 +39,73 @@ class VerificationClient {
         } = options;
 
         try {
-            const response = await fetch(`${this.serverUrl}/verify`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    script1,
-                    script2,
-                    script1_name,
-                    script2_name,
-                    is_ddv_edv
-                })
+            console.log('[VERIFY] Iniciando verificacion local (sin servidor)...');
+            console.log(`  - Script 1: ${script1_name}`);
+            console.log(`  - Script 2: ${script2_name}`);
+            console.log(`  - Modo DDV/EDV: ${is_ddv_edv}`);
+
+            // Ejecutar verificacion local
+            const report = this.verifier.verify(script1, script2, {
+                script1_name,
+                script2_name,
+                is_ddv_edv
             });
 
-            const result = await response.json();
+            this.lastVerificationReport = report;
 
-            if (!result.success) {
-                throw new Error(result.error || 'Error desconocido en verificación');
-            }
+            console.log('[OK] Verificacion completada');
+            console.log(`  - Score: ${report.similarity_score}%`);
+            console.log(`  - Equivalentes: ${report.is_equivalent}`);
+            console.log(`  - Total diferencias: ${report.total_differences}`);
 
-            this.lastVerificationReport = result.report;
-            return result.report;
+            return report;
 
         } catch (error) {
-            console.error('❌ Error en verificación:', error);
+            console.error('[ERROR] Error en verificacion:', error);
             throw error;
         }
     }
 
     /**
-     * Verifica conversión DDV→EDV
+     * Verifica conversion DDV->EDV
      * @param {string} ddvScript - Script DDV original
      * @param {string} edvScript - Script EDV convertido
-     * @returns {Promise<Object>} - Reporte de verificación
+     * @returns {Promise<Object>} - Reporte de verificacion
      */
     async verifyDDVtoEDV(ddvScript, edvScript) {
-        try {
-            const response = await fetch(`${this.serverUrl}/verify-ddv-edv`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    ddv_script: ddvScript,
-                    edv_script: edvScript
-                })
-            });
+        console.log('[VERIFY] Modo DDV vs EDV activado');
 
-            const result = await response.json();
-
-            if (!result.success) {
-                throw new Error(result.error || 'Error desconocido en verificación DDV→EDV');
-            }
-
-            this.lastVerificationReport = result.report;
-            return result.report;
-
-        } catch (error) {
-            console.error('❌ Error en verificación DDV→EDV:', error);
-            throw error;
+        // Detectar nombre del script
+        let scriptName = 'SCRIPT';
+        if (ddvScript.includes('MATRIZTRANSACCIONAGENTE')) {
+            scriptName = 'MATRIZTRANSACCIONAGENTE';
+        } else if (ddvScript.includes('MATRIZTRANSACCIONCAJERO')) {
+            scriptName = 'MATRIZTRANSACCIONCAJERO';
+        } else if (ddvScript.includes('MATRIZTRANSACCIONPOSMACROGIRO')) {
+            scriptName = 'MATRIZTRANSACCIONPOSMACROGIRO';
         }
+
+        return this.verifyScripts(ddvScript, edvScript, {
+            script1_name: `${scriptName}_DDV.py`,
+            script2_name: `${scriptName}_EDV.py`,
+            is_ddv_edv: true
+        });
     }
 
     /**
-     * Obtiene el último reporte de verificación
+     * Exporta reporte a JSON
+     * @returns {string} - JSON string del reporte
+     */
+    exportToJSON() {
+        if (!this.lastVerificationReport) {
+            throw new Error('No hay reporte disponible para exportar');
+        }
+
+        return JSON.stringify(this.lastVerificationReport, null, 2);
+    }
+
+    /**
+     * Obtiene ultimo reporte
      * @returns {Object|null}
      */
     getLastReport() {
@@ -119,373 +115,309 @@ class VerificationClient {
 
 
 /**
- * Verification UI - Componente de UI para mostrar resultados
- * ===========================================================
+ * Verification UI Renderer
+ * =========================
+ *
+ * Renderiza reportes de verificacion en HTML
  */
 class VerificationUI {
-    constructor(containerId) {
-        this.container = document.getElementById(containerId);
-        this.report = null;
+    constructor() {
+        this.currentReport = null;
     }
 
     /**
-     * Renderiza el reporte de verificación
-     * @param {Object} report - Reporte de verificación
+     * Renderiza un reporte completo
+     * @param {Object} report - Reporte de verificacion
      */
     render(report) {
-        this.report = report;
+        this.currentReport = report;
 
-        if (!this.container) {
-            console.error('❌ Container no encontrado');
+        const container = document.getElementById('verification-report');
+        if (!container) {
+            console.error('[ERROR] Contenedor de reporte no encontrado');
             return;
         }
 
-        // Generar HTML
-        const html = this.generateHTML(report);
-        this.container.innerHTML = html;
+        // Header del reporte
+        let html = this.renderHeader(report);
 
-        // Attach event listeners
+        // Estadisticas
+        html += this.renderStats(report);
+
+        // Diferencias
+        html += this.renderDifferences(report);
+
+        // Acciones
+        html += this.renderActions();
+
+        container.innerHTML = html;
+
+        // Agregar event listeners
         this.attachEventListeners();
     }
 
     /**
-     * Genera HTML del reporte
-     * @param {Object} report
-     * @returns {string}
+     * Renderiza header
      */
-    generateHTML(report) {
-        const statusIcon = report.is_equivalent ? '✅' : '⚠️';
-        const statusText = report.is_equivalent ? 'EQUIVALENTES' : 'DIFERENCIAS ENCONTRADAS';
-        const statusColor = report.is_equivalent ? '#10b981' : '#f59e0b';
-
-        // Score color
-        let scoreColor = '#10b981'; // verde
-        if (report.similarity_score < 80) scoreColor = '#f59e0b'; // amarillo
-        if (report.similarity_score < 60) scoreColor = '#ef4444'; // rojo
+    renderHeader(report) {
+        const statusClass = report.is_equivalent ? 'status-success' : 'status-error';
+        const statusIcon = report.is_equivalent ? 'OK' : 'ERROR';
+        const statusText = report.is_equivalent ? 'Scripts Equivalentes' : 'Scripts NO Equivalentes';
 
         return `
-            <div class="verification-report">
-                <!-- Header -->
-                <div class="verification-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; margin-bottom: 2rem;">
-                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem;">
-                        ${statusIcon} Reporte de Verificación
-                    </h3>
-                    <p style="margin: 0; opacity: 0.9;">
-                        ${report.script1_name} vs ${report.script2_name}
-                    </p>
-                </div>
-
-                <!-- Summary Cards -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <div class="verification-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Estado</div>
-                        <div style="font-size: 1.25rem; font-weight: bold; color: ${statusColor};">
-                            ${statusIcon} ${statusText}
-                        </div>
-                    </div>
-
-                    <div class="verification-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Score de Similitud</div>
-                        <div style="font-size: 1.25rem; font-weight: bold; color: ${scoreColor};">
-                            ${report.similarity_score}%
-                        </div>
-                    </div>
-
-                    <div class="verification-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Total Diferencias</div>
-                        <div style="font-size: 1.25rem; font-weight: bold; color: #3b82f6;">
-                            ${report.total_differences}
-                        </div>
-                    </div>
-
-                    <div class="verification-card" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">Críticas / Altas</div>
-                        <div style="font-size: 1.25rem; font-weight: bold; color: ${report.critical_count > 0 ? '#ef4444' : '#10b981'};">
-                            ${report.critical_count} / ${report.high_count}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                ${report.differences.length > 0 ? `
-                <div class="verification-filters" style="margin-bottom: 1.5rem;">
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="filter-btn active" data-level="all">
-                            Todas (${report.differences.length})
-                        </button>
-                        <button class="filter-btn" data-level="CRÍTICO">
-                            🔴 Críticas (${report.critical_count})
-                        </button>
-                        <button class="filter-btn" data-level="ALTO">
-                            🟠 Altas (${report.high_count})
-                        </button>
-                        <button class="filter-btn" data-level="MEDIO">
-                            🟡 Medias (${this.countByLevel(report.differences, 'MEDIO')})
-                        </button>
-                        <button class="filter-btn" data-level="BAJO">
-                            🟢 Bajas (${this.countByLevel(report.differences, 'BAJO')})
-                        </button>
-                        <button class="filter-btn" data-level="INFO">
-                            ℹ️ Info (${this.countByLevel(report.differences, 'INFO')})
-                        </button>
-                    </div>
-                </div>
-                ` : ''}
-
-                <!-- Differences List -->
-                ${report.differences.length > 0 ? this.generateDifferencesList(report.differences) : `
-                    <div style="text-align: center; padding: 3rem; background: #f0fdf4; border-radius: 8px; border: 2px solid #10b981;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
-                        <h3 style="color: #10b981; margin: 0 0 0.5rem 0;">¡Scripts Equivalentes!</h3>
-                        <p style="color: #6b7280; margin: 0;">No se encontraron diferencias significativas entre los scripts.</p>
-                    </div>
-                `}
-
-                <!-- Metadata -->
-                <div style="margin-top: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <h4 style="margin: 0 0 1rem 0; color: #334155;">📊 Metadata</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; font-size: 0.875rem;">
-                        <div>
-                            <strong>Script 1:</strong><br>
-                            • Funciones: ${report.metadata.script1_functions || 'N/A'}<br>
-                            • Operaciones: ${report.metadata.script1_operations || 'N/A'}<br>
-                            • Tablas fuente: ${this.formatList(report.metadata.script1_source_tables)}
-                        </div>
-                        <div>
-                            <strong>Script 2:</strong><br>
-                            • Funciones: ${report.metadata.script2_functions || 'N/A'}<br>
-                            • Operaciones: ${report.metadata.script2_operations || 'N/A'}<br>
-                            • Tablas fuente: ${this.formatList(report.metadata.script2_source_tables)}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Export Buttons -->
-                <div style="margin-top: 2rem; text-align: center;">
-                    <button class="btn btn-primary" onclick="verificationUI.exportJSON()">
-                        💾 Exportar JSON
-                    </button>
-                    <button class="btn btn-secondary" onclick="verificationUI.exportHTML()">
-                        📄 Exportar HTML
-                    </button>
+            <div class="report-header ${statusClass}">
+                <h2>[${statusIcon}] ${statusText}</h2>
+                <div class="report-meta">
+                    <span><strong>Script 1:</strong> ${report.script1_name}</span>
+                    <span><strong>Script 2:</strong> ${report.script2_name}</span>
+                    ${report.is_ddv_edv ? '<span class="badge-ddv-edv">DDV vs EDV</span>' : ''}
                 </div>
             </div>
         `;
     }
 
     /**
-     * Genera lista de diferencias
-     * @param {Array} differences
-     * @returns {string}
+     * Renderiza estadisticas
      */
-    generateDifferencesList(differences) {
-        const items = differences.map((diff, index) => {
-            const levelIcons = {
-                'CRÍTICO': '🔴',
-                'ALTO': '🟠',
-                'MEDIO': '🟡',
-                'BAJO': '🟢',
-                'INFO': 'ℹ️'
-            };
+    renderStats(report) {
+        const scoreClass = report.similarity_score >= 95 ? 'score-high' :
+                          report.similarity_score >= 80 ? 'score-medium' : 'score-low';
 
-            const levelColors = {
-                'CRÍTICO': '#ef4444',
-                'ALTO': '#f59e0b',
-                'MEDIO': '#eab308',
-                'BAJO': '#10b981',
-                'INFO': '#3b82f6'
-            };
+        return `
+            <div class="report-stats">
+                <div class="stat-card score-card ${scoreClass}">
+                    <div class="stat-value">${report.similarity_score}%</div>
+                    <div class="stat-label">Similitud</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${report.total_differences}</div>
+                    <div class="stat-label">Total Diferencias</div>
+                </div>
+                <div class="stat-card stat-critical">
+                    <div class="stat-value">${report.critical_count}</div>
+                    <div class="stat-label">Criticas</div>
+                </div>
+                <div class="stat-card stat-high">
+                    <div class="stat-value">${report.high_count}</div>
+                    <div class="stat-label">Altas</div>
+                </div>
+                <div class="stat-card stat-medium">
+                    <div class="stat-value">${report.medium_count}</div>
+                    <div class="stat-label">Medias</div>
+                </div>
+                <div class="stat-card stat-low">
+                    <div class="stat-value">${report.low_count + report.info_count}</div>
+                    <div class="stat-label">Bajas/Info</div>
+                </div>
+            </div>
+        `;
+    }
 
-            const icon = levelIcons[diff.level] || '•';
-            const color = levelColors[diff.level] || '#6b7280';
-
+    /**
+     * Renderiza diferencias
+     */
+    renderDifferences(report) {
+        if (report.differences.length === 0) {
             return `
-                <div class="difference-item" data-level="${diff.level}" style="background: white; border-left: 4px solid ${color}; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <!-- Header -->
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div style="flex: 1;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <span style="font-size: 1.25rem;">${icon}</span>
-                                <span style="font-weight: bold; color: ${color};">${diff.level}</span>
-                                <span style="color: #6b7280;">•</span>
-                                <span style="color: #6b7280; font-size: 0.875rem;">${diff.category}</span>
-                            </div>
-                            <h4 style="margin: 0; color: #1f2937;">${this.escapeHtml(diff.description)}</h4>
-                        </div>
-                        <button class="btn btn-sm" onclick="verificationUI.toggleDetails(${index})" style="white-space: nowrap;">
-                            <span id="toggle-icon-${index}">▼</span> Detalles
-                        </button>
-                    </div>
-
-                    <!-- Quick Summary -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div style="padding: 0.75rem; background: #fef2f2; border-radius: 6px;">
-                            <div style="font-size: 0.75rem; color: #991b1b; font-weight: bold; margin-bottom: 0.25rem;">SCRIPT 1</div>
-                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                ${this.escapeHtml(String(diff.script1_value).substring(0, 100))}${String(diff.script1_value).length > 100 ? '...' : ''}
-                            </div>
-                        </div>
-                        <div style="padding: 0.75rem; background: #f0fdf4; border-radius: 6px;">
-                            <div style="font-size: 0.75rem; color: #166534; font-weight: bold; margin-bottom: 0.25rem;">SCRIPT 2</div>
-                            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                ${this.escapeHtml(String(diff.script2_value).substring(0, 100))}${String(diff.script2_value).length > 100 ? '...' : ''}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Details (hidden by default) -->
-                    <div id="details-${index}" style="display: none; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        ${diff.location ? `
-                        <div style="margin-bottom: 1rem;">
-                            <strong style="color: #4b5563;">📍 Ubicación:</strong>
-                            <div style="margin-top: 0.25rem; color: #6b7280;">${this.escapeHtml(diff.location)}</div>
-                        </div>
-                        ` : ''}
-
-                        ${diff.impact ? `
-                        <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px;">
-                            <strong style="color: #92400e;">⚠️ Impacto:</strong>
-                            <div style="margin-top: 0.25rem; color: #78350f;">${this.escapeHtml(diff.impact)}</div>
-                        </div>
-                        ` : ''}
-
-                        ${diff.recommendation ? `
-                        <div style="padding: 0.75rem; background: #dbeafe; border-radius: 6px;">
-                            <strong style="color: #1e40af;">💡 Recomendación:</strong>
-                            <div style="margin-top: 0.25rem; color: #1e3a8a;">${this.escapeHtml(diff.recommendation)}</div>
-                        </div>
-                        ` : ''}
-
-                        <!-- Full Values -->
-                        <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <strong style="color: #4b5563;">Script 1 (completo):</strong>
-                                <pre style="margin-top: 0.5rem; padding: 0.75rem; background: #1f2937; color: #f9fafb; border-radius: 6px; overflow-x: auto; font-size: 0.75rem;">${this.escapeHtml(String(diff.script1_value))}</pre>
-                            </div>
-                            <div>
-                                <strong style="color: #4b5563;">Script 2 (completo):</strong>
-                                <pre style="margin-top: 0.5rem; padding: 0.75rem; background: #1f2937; color: #f9fafb; border-radius: 6px; overflow-x: auto; font-size: 0.75rem;">${this.escapeHtml(String(diff.script2_value))}</pre>
-                            </div>
-                        </div>
-                    </div>
+                <div class="no-differences">
+                    <h3>[OK] No se encontraron diferencias</h3>
+                    <p>Los scripts son identicos o equivalentes.</p>
                 </div>
             `;
-        }).join('');
+        }
 
-        return `<div class="differences-list">${items}</div>`;
-    }
+        let html = '<div class="differences-list"><h3>Diferencias Encontradas</h3>';
 
-    /**
-     * Attach event listeners
-     */
-    attachEventListeners() {
-        // Filter buttons
-        const filterBtns = this.container.querySelectorAll('.filter-btn');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const level = btn.dataset.level;
-                this.filterDifferences(level);
+        // Agrupar por severidad
+        const grouped = this.groupBySeverity(report.differences);
 
-                // Update active button
-                filterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-    }
-
-    /**
-     * Filtra diferencias por nivel
-     * @param {string} level
-     */
-    filterDifferences(level) {
-        const items = this.container.querySelectorAll('.difference-item');
-        items.forEach(item => {
-            if (level === 'all' || item.dataset.level === level) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
+        ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'].forEach(severity => {
+            if (grouped[severity] && grouped[severity].length > 0) {
+                html += this.renderSeverityGroup(severity, grouped[severity]);
             }
         });
+
+        html += '</div>';
+        return html;
     }
 
     /**
-     * Toggle detalles de una diferencia
-     * @param {number} index
+     * Agrupa diferencias por severidad
      */
-    toggleDetails(index) {
-        const details = document.getElementById(`details-${index}`);
-        const icon = document.getElementById(`toggle-icon-${index}`);
+    groupBySeverity(differences) {
+        const grouped = {
+            CRITICAL: [],
+            HIGH: [],
+            MEDIUM: [],
+            LOW: [],
+            INFO: []
+        };
 
-        if (details.style.display === 'none') {
-            details.style.display = 'block';
-            icon.textContent = '▲';
-        } else {
-            details.style.display = 'none';
-            icon.textContent = '▼';
+        differences.forEach(diff => {
+            if (grouped[diff.severity]) {
+                grouped[diff.severity].push(diff);
+            }
+        });
+
+        return grouped;
+    }
+
+    /**
+     * Renderiza grupo de severidad
+     */
+    renderSeverityGroup(severity, differences) {
+        const severityLabel = {
+            CRITICAL: 'Criticas',
+            HIGH: 'Altas',
+            MEDIUM: 'Medias',
+            LOW: 'Bajas',
+            INFO: 'Informativas'
+        }[severity];
+
+        let html = `
+            <div class="severity-group severity-${severity.toLowerCase()}">
+                <h4>[${severity}] ${severityLabel} (${differences.length})</h4>
+                <div class="differences-items">
+        `;
+
+        differences.forEach((diff, index) => {
+            html += this.renderDifference(diff, index);
+        });
+
+        html += '</div></div>';
+        return html;
+    }
+
+    /**
+     * Renderiza una diferencia individual
+     */
+    renderDifference(diff, index) {
+        return `
+            <div class="difference-item">
+                <div class="diff-header">
+                    <strong>${diff.category}</strong>
+                    <span class="diff-severity">${diff.severity}</span>
+                </div>
+                <div class="diff-description">${diff.description}</div>
+                <div class="diff-details">
+                    <pre>${this.escapeHtml(diff.details)}</pre>
+                </div>
+                <div class="diff-suggestion">
+                    <strong>Sugerencia:</strong> ${diff.suggestion}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Renderiza acciones
+     */
+    renderActions() {
+        return `
+            <div class="report-actions">
+                <button id="export-json-btn" class="btn btn-secondary">
+                    Exportar JSON
+                </button>
+                <button id="export-html-btn" class="btn btn-secondary">
+                    Exportar HTML
+                </button>
+                <button id="new-verification-btn" class="btn btn-primary">
+                    Nueva Verificacion
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * Agrega event listeners
+     */
+    attachEventListeners() {
+        // Export JSON
+        const exportJsonBtn = document.getElementById('export-json-btn');
+        if (exportJsonBtn) {
+            exportJsonBtn.addEventListener('click', () => this.exportJSON());
+        }
+
+        // Export HTML
+        const exportHtmlBtn = document.getElementById('export-html-btn');
+        if (exportHtmlBtn) {
+            exportHtmlBtn.addEventListener('click', () => this.exportHTML());
+        }
+
+        // Nueva verificacion
+        const newVerifyBtn = document.getElementById('new-verification-btn');
+        if (newVerifyBtn) {
+            newVerifyBtn.addEventListener('click', () => {
+                document.getElementById('verification-results').style.display = 'none';
+            });
         }
     }
 
     /**
-     * Exporta reporte como JSON
+     * Exporta a JSON
      */
     exportJSON() {
-        if (!this.report) return;
+        if (!this.currentReport) return;
 
-        const blob = new Blob([JSON.stringify(this.report, null, 2)], { type: 'application/json' });
+        const json = JSON.stringify(this.currentReport, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `verification_report_${Date.now()}.json`;
         a.click();
+
         URL.revokeObjectURL(url);
+        console.log('[OK] Reporte JSON exportado');
     }
 
     /**
-     * Exporta reporte como HTML
+     * Exporta a HTML
      */
     exportHTML() {
-        if (!this.report) return;
+        if (!this.currentReport) return;
 
-        const html = `
+        const container = document.getElementById('verification-report');
+        const htmlContent = `
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Verificación - ${this.report.script1_name} vs ${this.report.script2_name}</title>
+    <title>Verification Report</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 2rem; background: #f3f4f6; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        ${this.container.innerHTML}
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .report-header { padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .report-stats { display: flex; gap: 10px; margin-bottom: 20px; }
+        .stat-card { padding: 15px; background: #f8f9fa; border-radius: 8px; flex: 1; }
+        .stat-value { font-size: 24px; font-weight: bold; }
+        .difference-item { padding: 15px; margin: 10px 0; border-left: 4px solid #ccc; background: #f8f9fa; }
+        pre { background: #fff; padding: 10px; overflow-x: auto; }
     </style>
 </head>
 <body>
-    <div class="container">
-        ${this.container.innerHTML}
-    </div>
+    ${container.innerHTML}
 </body>
 </html>
         `;
 
-        const blob = new Blob([html], { type: 'text/html' });
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `verification_report_${Date.now()}.html`;
         a.click();
+
         URL.revokeObjectURL(url);
+        console.log('[OK] Reporte HTML exportado');
     }
 
-    // Utility methods
-    countByLevel(differences, level) {
-        return differences.filter(d => d.level === level).length;
-    }
-
-    formatList(list) {
-        if (!list || list.length === 0) return 'N/A';
-        return list.join(', ');
-    }
-
+    /**
+     * Escapa HTML
+     */
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -493,15 +425,6 @@ class VerificationUI {
     }
 }
 
-
-// Global instances
-let verificationClient = null;
-let verificationUI = null;
-
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    verificationClient = new VerificationClient();
-    verificationUI = new VerificationUI('verification-container');
-
-    console.log('✅ Verification Client initialized');
-});
+// Crear instancias globales
+const verificationClient = new VerificationClient();
+const verificationUI = new VerificationUI();

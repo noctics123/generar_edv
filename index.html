@@ -352,18 +352,17 @@
             <!-- PAGE: Verifier (Script Similarity) -->
             <div id="page-verifier" class="main-page">
 
-            <!-- Server Status Banner -->
-            <div id="server-status-banner" class="server-status-banner" style="display: none;">
+            <!-- Modo Local Banner -->
+            <div id="server-status-banner" class="server-status-banner status-online">
                 <div class="container">
                     <div style="display: flex; align-items: center; gap: 1rem;">
                         <div class="server-status-indicator"></div>
                         <div style="flex: 1;">
-                            <strong id="server-status-text">Verificando servidor...</strong>
-                            <p id="server-status-details" style="margin: 0.25rem 0 0 0; font-size: 0.875rem; opacity: 0.9;"></p>
+                            <strong id="server-status-text">Modo Local - 100% JavaScript</strong>
+                            <p id="server-status-details" style="margin: 0.25rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+                                No requiere servidor Python. Funciona completamente en el navegador.
+                            </p>
                         </div>
-                        <button id="retry-server-connection" class="btn btn-sm" style="display: none; background: white; color: #667eea;">
-                            🔄 Reintentar
-                        </button>
                     </div>
                 </div>
             </div>
@@ -540,6 +539,8 @@
     <!-- Scripts -->
     <script src="edv-converter-webapp/src/utils/edvConverter.js"></script>
     <script src="edv-converter-webapp/src/utils/validatorRiguroso.js"></script>
+    <!-- Verificador 100% JavaScript (sin servidor) -->
+    <script src="edv-converter-webapp/src/script_verifier.js"></script>
     <script src="edv-converter-webapp/src/verification_client.js"></script>
     <script src="edv-converter-webapp/src/verification_ui.js"></script>
     <script src="edv-converter-webapp/src/app.js"></script>
