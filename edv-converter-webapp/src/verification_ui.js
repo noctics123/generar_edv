@@ -37,7 +37,7 @@ function initializeVerificationSection() {
     // Syntax highlighting para editors
     initializeVerifyEditorHighlighting();
 
-    console.log('✅ Verification section initialized');
+    console.log('[OK] Verification section initialized');
 }
 
 /**
@@ -48,7 +48,7 @@ function handleVerifyFileUpload(event, scriptNumber) {
     if (!file) return;
 
     if (!file.name.endsWith('.py')) {
-        alert('⚠️ Por favor selecciona un archivo .py');
+        alert('[WARN] Por favor selecciona un archivo .py');
         return;
     }
 
@@ -65,7 +65,7 @@ function handleVerifyFileUpload(event, scriptNumber) {
 
         updateVerifyStats(scriptNumber);
         document.getElementById(`verify-file-name-${scriptNumber}`).textContent = file.name;
-        console.log(`✅ Script ${scriptNumber} cargado: ${file.name}`);
+        console.log(`[OK] Script ${scriptNumber} cargado: ${file.name}`);
     };
     reader.readAsText(file);
 }
@@ -85,7 +85,7 @@ function clearVerifyScript(scriptNumber) {
     }
 
     updateVerifyStats(scriptNumber);
-    console.log(`🗑️ Script ${scriptNumber} limpiado`);
+    console.log(`[CLEAR] Script ${scriptNumber} limpiado`);
 }
 
 /**
@@ -113,7 +113,7 @@ function updateVerifyStats(scriptNumber) {
  */
 function useCurrentConversion() {
     if (!currentInputScript || !currentOutputScript) {
-        alert('⚠️ Primero debes realizar una conversión DDV → EDV en la sección 1');
+        alert('[WARN] Primero debes realizar una conversion DDV -> EDV en la seccion 1');
         return;
     }
 
@@ -139,7 +139,7 @@ function useCurrentConversion() {
         block: 'start'
     });
 
-    showNotification('✅ Scripts de conversión cargados para verificación', 'success');
+    showNotification('[OK] Scripts de conversion cargados para verificacion', 'success');
 }
 
 /**
@@ -164,8 +164,8 @@ async function loadVerificationExamples() {
         verifyScript1Content = script1;
         verifyScript2Content = script2;
 
-        document.getElementById('verify-file-name-1').textContent = '📂 Ejemplo: AGENTE';
-        document.getElementById('verify-file-name-2').textContent = '📂 Ejemplo: CAJERO';
+        document.getElementById('verify-file-name-1').textContent = 'Ejemplo: AGENTE';
+        document.getElementById('verify-file-name-2').textContent = 'Ejemplo: CAJERO';
 
         // Seleccionar modo individual
         document.querySelector('input[name="verification-mode"][value="individual"]').checked = true;
@@ -173,11 +173,11 @@ async function loadVerificationExamples() {
         updateVerifyStats(1);
         updateVerifyStats(2);
 
-        showNotification('✅ Ejemplos cargados: Agente vs Cajero', 'success');
+        showNotification('[OK] Ejemplos cargados: Agente vs Cajero', 'success');
 
     } catch (error) {
         console.error('Error cargando ejemplos:', error);
-        alert(`❌ Error al cargar ejemplos:\n${error.message}`);
+        alert(`[ERROR] Error al cargar ejemplos:\n${error.message}`);
     }
 }
 
@@ -186,7 +186,7 @@ async function loadVerificationExamples() {
  */
 function swapVerifyScripts() {
     if (!verifyScript1Content && !verifyScript2Content) {
-        alert('⚠️ Carga scripts primero antes de intercambiar');
+        alert('[WARN] Carga scripts primero antes de intercambiar');
         return;
     }
 
@@ -207,7 +207,7 @@ function swapVerifyScripts() {
     updateVerifyStats(1);
     updateVerifyStats(2);
 
-    showNotification('↔️ Scripts intercambiados', 'info');
+    showNotification('Scripts intercambiados', 'info');
 }
 
 /**
@@ -216,7 +216,7 @@ function swapVerifyScripts() {
 async function verifyScriptsSimilarity() {
     // Validar que hay scripts
     if (!verifyScript1Content || !verifyScript2Content) {
-        alert('⚠️ Debes cargar ambos scripts antes de verificar');
+        alert('[WARN] Debes cargar ambos scripts antes de verificar');
         return;
     }
 
@@ -224,12 +224,12 @@ async function verifyScriptsSimilarity() {
     const mode = document.querySelector('input[name="verification-mode"]:checked').value;
     const isDdvEdv = (mode === 'ddv-edv');
 
-    console.log(`🔍 Iniciando verificación en modo: ${mode}`);
+    console.log(`[VERIFY] Iniciando verificacion en modo: ${mode}`);
 
     // Mostrar loading
     const verifyBtn = document.getElementById('verify-scripts-btn');
     const originalText = verifyBtn.innerHTML;
-    verifyBtn.innerHTML = '⏳ Verificando...';
+    verifyBtn.innerHTML = 'Verificando...';
     verifyBtn.disabled = true;
 
     try {
@@ -253,13 +253,13 @@ O usa el quick start:
         // Llamar al verificador según modo
         let report;
         if (isDdvEdv) {
-            console.log('🔄 Modo DDV vs EDV');
+            console.log('[MODE] DDV vs EDV');
             report = await verificationClient.verifyDDVtoEDV(
                 verifyScript1Content,
                 verifyScript2Content
             );
         } else {
-            console.log('📝 Modo Scripts Individuales');
+            console.log('[MODE] Scripts Individuales');
             report = await verificationClient.verifyScripts(
                 verifyScript1Content,
                 verifyScript2Content,
@@ -289,18 +289,18 @@ O usa el quick start:
         const score = report.similarity_score;
 
         if (criticalCount === 0 && score >= 95) {
-            console.log('✅ Verificación APROBADA');
-            showNotification(`✅ Scripts Equivalentes (${score}%)`, 'success');
+            console.log('[OK] Verificacion APROBADA');
+            showNotification(`[OK] Scripts Equivalentes (${score}%)`, 'success');
         } else if (criticalCount === 0 && score >= 80) {
-            console.log('⚠️ Verificación con ADVERTENCIAS');
-            showNotification(`⚠️ Scripts Similares con Diferencias (${score}%)`, 'warning');
+            console.log('[WARN] Verificacion con ADVERTENCIAS');
+            showNotification(`[WARN] Scripts Similares con Diferencias (${score}%)`, 'warning');
         } else {
-            console.log('❌ Verificación RECHAZADA');
-            showNotification(`❌ Scripts NO Equivalentes - ${criticalCount} Errores Críticos`, 'error');
+            console.log('[ERROR] Verificacion RECHAZADA');
+            showNotification(`[ERROR] Scripts NO Equivalentes - ${criticalCount} Errores Criticos`, 'error');
         }
 
         // Log detallado
-        console.log('📊 Reporte:', {
+        console.log('[REPORTE]', {
             score: score,
             equivalent: report.is_equivalent,
             critical: criticalCount,
@@ -309,7 +309,7 @@ O usa el quick start:
         });
 
     } catch (error) {
-        console.error('❌ Error en verificación:', error);
+        console.error('[ERROR] Error en verificacion:', error);
 
         // Logging detallado del error
         const errorDetails = {
@@ -322,7 +322,7 @@ O usa el quick start:
             serverUrl: verificationClient.serverUrl
         };
 
-        console.group('🔴 Error Detallado de Verificación');
+        console.group('[ERROR DETALLADO] Verificacion');
         console.error('Mensaje:', errorDetails.message);
         console.error('Timestamp:', errorDetails.timestamp);
         console.error('Modo:', errorDetails.mode);
@@ -333,28 +333,28 @@ O usa el quick start:
         console.groupEnd();
 
         // Mostrar error detallado al usuario
-        let userMessage = `❌ Error al verificar scripts:\n\n${error.message}\n\n`;
+        let userMessage = `[ERROR] Error al verificar scripts:\n\n${error.message}\n\n`;
 
         if (error.message.includes('Servidor de verificación no disponible')) {
-            userMessage += `📋 Pasos para solucionar:\n`;
+            userMessage += `Pasos para solucionar:\n`;
             userMessage += `1. Abre una terminal\n`;
             userMessage += `2. Navega a la carpeta del proyecto\n`;
             userMessage += `3. Ejecuta: python verification_server.py\n`;
             userMessage += `4. Espera a ver "Running on http://0.0.0.0:5000"\n`;
-            userMessage += `5. Vuelve a intentar la verificación\n\n`;
-            userMessage += `💡 O usa el quick start: .\\quick_start_verifier.bat`;
+            userMessage += `5. Vuelve a intentar la verificacion\n\n`;
+            userMessage += `O usa el quick start: .\\quick_start_verifier.bat`;
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            userMessage += `🌐 Error de red detectado.\n\n`;
+            userMessage += `Error de red detectado.\n\n`;
             userMessage += `Posibles causas:\n`;
-            userMessage += `• Servidor no está corriendo\n`;
-            userMessage += `• Firewall bloqueando puerto 5000\n`;
-            userMessage += `• CORS no configurado correctamente\n\n`;
-            userMessage += `Verifica la consola (F12) para más detalles.`;
+            userMessage += `- Servidor no esta corriendo\n`;
+            userMessage += `- Firewall bloqueando puerto 5000\n`;
+            userMessage += `- CORS no configurado correctamente\n\n`;
+            userMessage += `Verifica la consola (F12) para mas detalles.`;
         } else {
-            userMessage += `Detalles técnicos:\n`;
-            userMessage += `• Modo: ${mode}\n`;
-            userMessage += `• Script 1: ${errorDetails.script1Length} caracteres\n`;
-            userMessage += `• Script 2: ${errorDetails.script2Length} caracteres\n\n`;
+            userMessage += `Detalles tecnicos:\n`;
+            userMessage += `- Modo: ${mode}\n`;
+            userMessage += `- Script 1: ${errorDetails.script1Length} caracteres\n`;
+            userMessage += `- Script 2: ${errorDetails.script2Length} caracteres\n\n`;
             userMessage += `Verifica la consola del navegador (F12) para el stack trace completo.`;
         }
 
