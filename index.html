@@ -511,6 +511,19 @@
                     </button>
                 </div>
 
+                <!-- Verification Log (Console visible) -->
+                <div id="verification-log-container" style="display: none; margin-top: 1.5rem;">
+                    <div style="background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.875rem; max-height: 300px; overflow-y: auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #333;">
+                            <strong style="color: #4ec9b0;">📋 Console Log</strong>
+                            <button id="clear-log-btn" style="background: #333; color: #fff; border: none; padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">
+                                Clear
+                            </button>
+                        </div>
+                        <div id="verification-log"></div>
+                    </div>
+                </div>
+
                 <!-- Verification Results (Hidden by default) -->
                 <div id="verification-results" style="display: none; margin-top: 2rem;">
                     <h3 style="margin-bottom: 1.5rem;">📊 Resultados de Verificación</h3>
@@ -537,13 +550,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 
     <!-- Scripts -->
-    <script src="edv-converter-webapp/src/utils/edvConverter.js?v=2.0"></script>
-    <script src="edv-converter-webapp/src/utils/validatorRiguroso.js?v=2.0"></script>
+    <script src="edv-converter-webapp/src/utils/edvConverter.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/utils/validatorRiguroso.js?v=2.1"></script>
     <!-- Verificador 100% JavaScript (sin servidor) -->
-    <script src="edv-converter-webapp/src/script_verifier.js?v=2.0"></script>
-    <script src="edv-converter-webapp/src/verification_client.js?v=2.0"></script>
-    <script src="edv-converter-webapp/src/verification_ui.js?v=2.0"></script>
-    <script src="edv-converter-webapp/src/app.js?v=2.0"></script>
+    <script src="edv-converter-webapp/src/script_verifier.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/verification_client.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/verification_ui.js?v=2.1"></script>
+    <script src="edv-converter-webapp/src/app.js?v=2.1"></script>
 </body>
 </html>
 

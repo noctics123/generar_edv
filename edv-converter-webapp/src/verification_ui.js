@@ -11,6 +11,55 @@ let verifyScript1Content = '';
 let verifyScript2Content = '';
 
 /**
+ * Agrega mensaje al log visual
+ */
+function addLogMessage(message, type = 'info') {
+    const logContainer = document.getElementById('verification-log');
+    const logWrapper = document.getElementById('verification-log-container');
+
+    if (!logContainer || !logWrapper) return;
+
+    // Mostrar el contenedor de log
+    logWrapper.style.display = 'block';
+
+    // Colores según tipo
+    const colors = {
+        'info': '#4ec9b0',
+        'success': '#4ec9b0',
+        'warn': '#dcdcaa',
+        'error': '#f48771',
+        'verify': '#569cd6'
+    };
+
+    const color = colors[type] || '#d4d4d4';
+
+    // Timestamp
+    const now = new Date();
+    const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+    // Crear elemento de log
+    const logEntry = document.createElement('div');
+    logEntry.style.marginBottom = '0.25rem';
+    logEntry.style.color = color;
+    logEntry.innerHTML = `<span style="color: #808080;">[${timestamp}]</span> ${message}`;
+
+    logContainer.appendChild(logEntry);
+
+    // Auto-scroll al final
+    logContainer.parentElement.scrollTop = logContainer.parentElement.scrollHeight;
+}
+
+/**
+ * Limpia el log visual
+ */
+function clearLog() {
+    const logContainer = document.getElementById('verification-log');
+    if (logContainer) {
+        logContainer.innerHTML = '';
+    }
+}
+
+/**
  * Inicializa event listeners para sección de verificación
  */
 function initializeVerificationSection() {
@@ -33,6 +82,12 @@ function initializeVerificationSection() {
 
     // Main verify button
     document.getElementById('verify-scripts-btn').addEventListener('click', verifyScriptsSimilarity);
+
+    // Clear log button
+    const clearLogBtn = document.getElementById('clear-log-btn');
+    if (clearLogBtn) {
+        clearLogBtn.addEventListener('click', clearLog);
+    }
 
     // Syntax highlighting para editors
     initializeVerifyEditorHighlighting();
@@ -225,6 +280,7 @@ async function verifyScriptsSimilarity() {
     const isDdvEdv = (mode === 'ddv-edv');
 
     console.log(`[VERIFY] Iniciando verificacion en modo: ${mode}`);
+    addLogMessage(`Iniciando verificacion en modo: ${mode}`, 'verify');
 
     // Mostrar loading
     const verifyBtn = document.getElementById('verify-scripts-btn');
@@ -235,21 +291,27 @@ async function verifyScriptsSimilarity() {
     try {
         // Modo local - sin servidor necesario
         console.log('[INFO] Usando verificador local (sin servidor)');
+        addLogMessage('Usando verificador local (100% JavaScript)', 'info');
 
         // Obtener nombres de archivos
         const script1Name = document.getElementById('verify-file-name-1').textContent;
         const script2Name = document.getElementById('verify-file-name-2').textContent;
 
+        addLogMessage(`Script 1: ${script1Name}`, 'info');
+        addLogMessage(`Script 2: ${script2Name}`, 'info');
+
         // Llamar al verificador según modo
         let report;
         if (isDdvEdv) {
             console.log('[MODE] DDV vs EDV');
+            addLogMessage('Modo: DDV vs EDV', 'verify');
             report = await verificationClient.verifyDDVtoEDV(
                 verifyScript1Content,
                 verifyScript2Content
             );
         } else {
             console.log('[MODE] Scripts Individuales');
+            addLogMessage('Modo: Scripts Individuales', 'verify');
             report = await verificationClient.verifyScripts(
                 verifyScript1Content,
                 verifyScript2Content,
@@ -278,15 +340,23 @@ async function verifyScriptsSimilarity() {
         const highCount = report.high_count;
         const score = report.similarity_score;
 
+        addLogMessage('────────────────────────────────', 'info');
+        addLogMessage(`Similitud: ${score}%`, 'verify');
+        addLogMessage(`Total diferencias: ${report.total_differences}`, 'info');
+        addLogMessage(`Criticas: ${criticalCount}, Altas: ${highCount}`, 'info');
+
         if (criticalCount === 0 && score >= 95) {
             console.log('[OK] Verificacion APROBADA');
             console.log(`[OK] Scripts Equivalentes (${score}%)`);
+            addLogMessage(`✓ Scripts Equivalentes (${score}%)`, 'success');
         } else if (criticalCount === 0 && score >= 80) {
             console.log('[WARN] Verificacion con ADVERTENCIAS');
             console.log(`[WARN] Scripts Similares con Diferencias (${score}%)`);
+            addLogMessage(`⚠ Scripts Similares con Diferencias (${score}%)`, 'warn');
         } else {
             console.log('[ERROR] Verificacion RECHAZADA');
             console.log(`[ERROR] Scripts NO Equivalentes - ${criticalCount} Errores Criticos`);
+            addLogMessage(`✗ Scripts NO Equivalentes - ${criticalCount} Errores Criticos`, 'error');
         }
 
         // Log detallado
@@ -300,6 +370,7 @@ async function verifyScriptsSimilarity() {
 
     } catch (error) {
         console.error('[ERROR] Error en verificacion:', error);
+        addLogMessage(`ERROR: ${error.message}`, 'error');
 
         // Logging detallado del error
         const errorDetails = {
