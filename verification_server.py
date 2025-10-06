@@ -185,14 +185,14 @@ def verify_ddv_edv():
 
 if __name__ == '__main__':
     print("="*60)
-    print("🚀 Verification Server")
+    print("VERIFICATION SERVER")
     print("="*60)
-    print("📍 Endpoints:")
-    print("   • GET  /health")
-    print("   • POST /verify")
-    print("   • POST /verify-ddv-edv")
+    print("Endpoints:")
+    print("   - GET  /health")
+    print("   - POST /verify")
+    print("   - POST /verify-ddv-edv")
     print("="*60)
-    print("\n🌐 Starting server on http://localhost:5000")
-    print("   Press Ctrl+C to stop\n")
+    print("\nStarting server on http://localhost:5000")
+    print("Press Ctrl+C to stop\n")
 
     app.run(host='0.0.0.0', port=5000, debug=True)
