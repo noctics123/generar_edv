@@ -289,24 +289,214 @@ class VerificationUI {
     }
 
     /**
-     * Renderiza una diferencia individual
+     * Renderiza una diferencia individual (MEJORADO con análisis detallado)
      */
     renderDifference(diff, index) {
-        return `
-            <div class="difference-item">
+        const hasDetailedAnalysis = diff.changeType || diff.charDiff || diff.tokenDiff || diff.patternMatches;
+        const expandId = `diff-expand-${index}`;
+
+        let html = `
+            <div class="difference-item ${hasDetailedAnalysis ? 'has-details' : ''}">
                 <div class="diff-header">
-                    <strong>${diff.category}</strong>
-                    <span class="diff-severity">${diff.severity}</span>
+                    <div class="diff-header-left">
+                        <strong>${diff.category}</strong>
+                        <span class="diff-severity">${diff.severity}</span>
+                        ${diff.changeType ? `<span class="diff-change-type" style="background: ${diff.changeType.color}; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">${diff.changeType.type}</span>` : ''}
+                    </div>
+                    ${hasDetailedAnalysis ? `
+                        <button class="diff-expand-btn" onclick="toggleDiffDetails('${expandId}')">
+                            <span class="expand-icon">▼</span> Ver Detalles
+                        </button>
+                    ` : ''}
                 </div>
                 <div class="diff-description">${diff.description}</div>
                 <div class="diff-details">
                     <pre>${this.escapeHtml(diff.details)}</pre>
                 </div>
+        `;
+
+        // NUEVO: Análisis detallado expandible
+        if (hasDetailedAnalysis) {
+            html += `
+                <div id="${expandId}" class="diff-detailed-analysis" style="display: none;">
+                    ${this.renderDetailedAnalysis(diff)}
+                </div>
+            `;
+        }
+
+        html += `
                 <div class="diff-suggestion">
                     <strong>Sugerencia:</strong> ${diff.suggestion}
                 </div>
             </div>
         `;
+
+        return html;
+    }
+
+    /**
+     * Renderiza análisis detallado de una diferencia
+     */
+    renderDetailedAnalysis(diff) {
+        let html = '<div class="detailed-tabs">';
+
+        // Tab 1: Impacto
+        if (diff.impactAssessment) {
+            html += `
+                <div class="detail-tab">
+                    <h4>📊 Análisis de Impacto</h4>
+                    <div class="impact-assessment">
+                        <div><strong>Nivel:</strong> <span class="severity-badge severity-${diff.impactAssessment.level.toLowerCase()}">${diff.impactAssessment.level}</span></div>
+                        ${diff.impactAssessment.areas.length > 0 ? `
+                            <div><strong>Áreas Afectadas:</strong>
+                                <ul>${diff.impactAssessment.areas.map(area => `<li>${area}</li>`).join('')}</ul>
+                            </div>
+                        ` : ''}
+                        <div class="recommendation"><strong>Recomendación:</strong> ${diff.impactAssessment.recommendation}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Tab 2: Cambios a Nivel de Caracteres
+        if (diff.charDiff && diff.charDiff.length > 0) {
+            html += `
+                <div class="detail-tab">
+                    <h4>🔍 Diff Char-by-Char</h4>
+                    <div class="char-diff-container">
+            `;
+
+            diff.charDiff.forEach(lineDiff => {
+                if (lineDiff.type === 'different' && lineDiff.charChanges && lineDiff.charChanges.length > 0) {
+                    html += `<div class="char-diff-line">`;
+                    html += `<div class="char-diff-label">Línea con cambios:</div>`;
+
+                    // Mostrar línea 1 con caracteres removidos resaltados
+                    html += `<div class="char-diff-old">`;
+                    html += `<span class="diff-line-marker">-</span> `;
+                    let lastPos = 0;
+                    lineDiff.charChanges.forEach(change => {
+                        if (change.start > lastPos) {
+                            html += this.escapeHtml(lineDiff.line1.substring(lastPos, change.start));
+                        }
+                        if (change.removed) {
+                            html += `<mark class="char-removed">${this.escapeHtml(change.removed)}</mark>`;
+                        }
+                        lastPos = change.start + change.removed.length;
+                    });
+                    if (lastPos < lineDiff.line1.length) {
+                        html += this.escapeHtml(lineDiff.line1.substring(lastPos));
+                    }
+                    html += `</div>`;
+
+                    // Mostrar línea 2 con caracteres agregados resaltados
+                    html += `<div class="char-diff-new">`;
+                    html += `<span class="diff-line-marker">+</span> `;
+                    lastPos = 0;
+                    lineDiff.charChanges.forEach(change => {
+                        if (change.start > lastPos) {
+                            html += this.escapeHtml(lineDiff.line2.substring(lastPos, change.start));
+                        }
+                        if (change.added) {
+                            html += `<mark class="char-added">${this.escapeHtml(change.added)}</mark>`;
+                        }
+                        lastPos = change.start + change.added.length;
+                    });
+                    if (lastPos < lineDiff.line2.length) {
+                        html += this.escapeHtml(lineDiff.line2.substring(lastPos));
+                    }
+                    html += `</div>`;
+                    html += `</div>`;
+                }
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Tab 3: Análisis de Tokens
+        if (diff.tokenDiff && (diff.tokenDiff.removed.length > 0 || diff.tokenDiff.added.length > 0)) {
+            html += `
+                <div class="detail-tab">
+                    <h4>🔤 Análisis de Tokens</h4>
+                    <div class="token-diff-container">
+                        ${diff.tokenDiff.removed.length > 0 ? `
+                            <div class="token-group">
+                                <strong>Removidos:</strong>
+                                <div class="token-list">
+                                    ${diff.tokenDiff.removed.map(token => `<span class="token token-removed">${this.escapeHtml(token)}</span>`).join(' ')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${diff.tokenDiff.added.length > 0 ? `
+                            <div class="token-group">
+                                <strong>Agregados:</strong>
+                                <div class="token-list">
+                                    ${diff.tokenDiff.added.map(token => `<span class="token token-added">${this.escapeHtml(token)}</span>`).join(' ')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Tab 4: Patrones DDV→EDV
+        if (diff.patternMatches && diff.patternMatches.length > 0) {
+            html += `
+                <div class="detail-tab">
+                    <h4>🎯 Patrones DDV→EDV Detectados</h4>
+                    <div class="pattern-matches">
+            `;
+
+            diff.patternMatches.forEach(match => {
+                const iconStatus = match.status === 'OK' ? '✓' : '✗';
+                const statusClass = match.status === 'OK' ? 'pattern-ok' : 'pattern-missing';
+                html += `
+                    <div class="pattern-match ${statusClass}">
+                        <div class="pattern-status">${iconStatus}</div>
+                        <div class="pattern-details">
+                            <div class="pattern-name"><strong>${match.pattern}</strong></div>
+                            <div class="pattern-description">${match.description}</div>
+                            <div class="pattern-message">${match.message}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Tab 5: Snippets de Código
+        if (diff.codeSnippets) {
+            html += `
+                <div class="detail-tab">
+                    <h4>💻 Snippets de Código</h4>
+                    <div class="code-snippets">
+            `;
+
+            if (diff.codeSnippets.script1) {
+                html += `
+                    <div class="code-snippet">
+                        <div class="snippet-label">Script 1:</div>
+                        <pre class="snippet-code"><code>${this.escapeHtml(diff.codeSnippets.script1)}</code></pre>
+                    </div>
+                `;
+            }
+
+            if (diff.codeSnippets.script2) {
+                html += `
+                    <div class="code-snippet">
+                        <div class="snippet-label">Script 2:</div>
+                        <pre class="snippet-code"><code>${this.escapeHtml(diff.codeSnippets.script2)}</code></pre>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+        }
+
+        html += '</div>'; // Close detailed-tabs
+        return html;
     }
 
     /**
@@ -428,3 +618,25 @@ class VerificationUI {
 // Crear instancias globales
 const verificationClient = new VerificationClient();
 const verificationUI = new VerificationUI();
+
+/**
+ * Toggle detalles de diferencia (función global para onclick)
+ */
+function toggleDiffDetails(expandId) {
+    const detailsDiv = document.getElementById(expandId);
+    const button = document.querySelector(`[onclick*="${expandId}"]`);
+
+    if (!detailsDiv || !button) return;
+
+    const isExpanded = detailsDiv.style.display !== 'none';
+
+    if (isExpanded) {
+        detailsDiv.style.display = 'none';
+        button.querySelector('.expand-icon').textContent = '▼';
+        button.innerHTML = button.innerHTML.replace('Ocultar', 'Ver');
+    } else {
+        detailsDiv.style.display = 'block';
+        button.querySelector('.expand-icon').textContent = '▲';
+        button.innerHTML = button.innerHTML.replace('Ver', 'Ocultar');
+    }
+}

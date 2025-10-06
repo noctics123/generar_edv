@@ -590,6 +590,13 @@ class ScriptVerifier {
             counts[diff.severity.toLowerCase()]++;
         });
 
+        // NUEVO: Análisis detallado con DetailedDiffAnalyzer
+        let detailedDifferences = this.differences;
+        if (typeof DetailedDiffAnalyzer !== 'undefined') {
+            const analyzer = new DetailedDiffAnalyzer();
+            detailedDifferences = analyzer.analyzeAll(this.differences, this.script1, this.script2);
+        }
+
         return {
             script1_name: this.script1Name,
             script2_name: this.script2Name,
@@ -602,7 +609,7 @@ class ScriptVerifier {
             medium_count: counts.medium,
             low_count: counts.low,
             info_count: counts.info,
-            differences: this.differences,
+            differences: detailedDifferences, // Usar diferencias con análisis detallado
             summary: this.generateSummary(score, isEquivalent, counts)
         };
     }
