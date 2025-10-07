@@ -19,7 +19,7 @@ class AIAnalyzer {
             gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
         };
         this.models = {
-            openai: 'gpt-4o',
+            openai: 'gpt-5-chat-latest',
             claude: 'claude-3-5-sonnet-20241022',
             gemini: 'gemini-pro'
         };

@@ -24,7 +24,8 @@
       "Bash(timeout:*)",
       "Bash(curl:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(start index.html)"
     ],
     "deny": [],
     "ask": []
