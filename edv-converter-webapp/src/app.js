@@ -95,6 +95,21 @@ function initializeEventListeners() {
     // Multi-periodo
     document.getElementById('multiperiodo-hoy').addEventListener('click', setTodayMultiperiodo);
     document.getElementById('generate-multiperiodo').addEventListener('click', generateMultiperiodo);
+
+    // Conversion method selection
+    const methodRadios = document.querySelectorAll('input[name="conversion-method"]');
+    methodRadios.forEach(radio => {
+        radio.addEventListener('change', handleConversionMethodChange);
+    });
+
+    // Add visual feedback for method selection
+    const methodCards = document.querySelectorAll('.conversion-method-card');
+    methodCards.forEach(card => {
+        card.addEventListener('click', () => {
+            methodCards.forEach(c => c.style.borderColor = '#dee2e6');
+            card.style.borderColor = '#0066cc';
+        });
+    });
 }
 
 // ===== FILE HANDLING =====
@@ -185,14 +200,18 @@ function updateOutputStats() {
 }
 
 // ===== CONVERSION =====
-function convertScript() {
+async function convertScript() {
     // Validate input
     if (!currentInputScript || currentInputScript.trim() === '') {
         alert('⚠️ Por favor carga o pega un script DDV primero');
         return;
     }
 
-    console.log('🔄 Iniciando conversión...');
+    // Detectar método de conversión seleccionado
+    const methodRadio = document.querySelector('input[name="conversion-method"]:checked');
+    const method = methodRadio ? methodRadio.value : 'classic';
+
+    console.log(`🔄 Iniciando conversión (método: ${method})...`);
 
     // Leer configuración de switches de setup
     window.edvSetupOptions = {
@@ -213,60 +232,73 @@ function convertScript() {
     // Show loading state
     const convertBtn = document.getElementById('convert-btn');
     const originalText = convertBtn.innerHTML;
-    convertBtn.innerHTML = '⏳ Convirtiendo...';
+    convertBtn.innerHTML = method === 'ai' ? '🤖 Generando con IA...' : '⏳ Convirtiendo...';
     convertBtn.disabled = true;
 
-    // Simulate async processing
-    setTimeout(() => {
-        try {
-            // Convert
+    try {
+        // Convert based on selected method
+        if (method === 'ai') {
+            // AI-powered conversion
+            conversionResult = await convertWithAI();
+            currentOutputScript = conversionResult.edvScript;
+        } else {
+            // Classic rule-based conversion
             const converter = new EDVConverter();
             conversionResult = converter.convert(currentInputScript);
             currentOutputScript = conversionResult.edvScript;
-
-            // Validar con validador EDV
-            const validator = new EDVValidatorRiguroso();
-            validationResult = validator.validate(currentOutputScript);
-
-            // Update UI
-            updateConversionResults();
-            updateValidationResults();
-            generateDiff();
-
-            // Show output section
-            document.getElementById('output-section').style.display = 'block';
-
-            // Scroll to results
-            document.getElementById('output-section').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-
-            console.log('✅ Conversión completada');
-            console.log('📊 Cambios:', conversionResult.log.length);
-            console.log('⚠️ Advertencias:', conversionResult.warnings.length);
-            console.log('🎯 Score:', validationResult.score + '%');
-
-        } catch (error) {
-            console.error('❌ Error en conversión:', error);
-
-            // Mostrar el error en la UI para depuración
-            const errorLogEl = document.getElementById('log-errors');
-            if (errorLogEl) {
-                errorLogEl.innerHTML = `<div class="log-item error"><strong>Error:</strong> ${escapeHtml(error.message)}<br><pre>${escapeHtml(error.stack)}</pre></div>`;
-            }
-
-            // Asegurarse de que la sección de salida sea visible y mostrar el log
-            document.getElementById('output-section').style.display = 'block';
-            switchTab('log');
-
-            alert('❌ Error al convertir el script. Revisa la pestaña "Log" para más detalles.');
-        } finally {
-            // Restore button
-            convertBtn.innerHTML = originalText;
-            convertBtn.disabled = false;
         }
-    }, 500);
+
+        // Validar con validador EDV
+        const validator = new EDVValidatorRiguroso();
+        validationResult = validator.validate(currentOutputScript);
+
+        // Update UI
+        updateConversionResults();
+        updateValidationResults();
+        generateDiff();
+
+        // Show output section
+        document.getElementById('output-section').style.display = 'block';
+
+        // Scroll to results
+        document.getElementById('output-section').scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        console.log('✅ Conversión completada');
+        console.log('📊 Cambios:', conversionResult.log.length);
+        console.log('⚠️ Advertencias:', conversionResult.warnings.length);
+        console.log('🎯 Score:', validationResult.score + '%');
+
+        // Si fue generado con IA, mostrar información adicional
+        if (conversionResult.aiGenerated) {
+            console.log('🤖 Generado con IA');
+            console.log('📝 Resumen:', conversionResult.aiSummary);
+            if (conversionResult.aiOptimizationsApplied && conversionResult.aiOptimizationsApplied.length > 0) {
+                console.log('⚡ Optimizaciones aplicadas:', conversionResult.aiOptimizationsApplied.length);
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ Error en conversión:', error);
+
+        // Mostrar el error en la UI para depuración
+        const errorLogEl = document.getElementById('log-errors');
+        if (errorLogEl) {
+            errorLogEl.innerHTML = `<div class="log-item error"><strong>Error:</strong> ${escapeHtml(error.message)}<br><pre>${escapeHtml(error.stack || '')}</pre></div>`;
+        }
+
+        // Asegurarse de que la sección de salida sea visible y mostrar el log
+        document.getElementById('output-section').style.display = 'block';
+        switchTab('log');
+
+        alert('❌ Error al convertir el script. Revisa la pestaña "Log" para más detalles.');
+    } finally {
+        // Restore button
+        convertBtn.innerHTML = originalText;
+        convertBtn.disabled = false;
+    }
 }
 
 // ===== UPDATE RESULTS =====
@@ -307,14 +339,50 @@ function updateValidationResults() {
 }
 
 function updateLogTab() {
+    // Si fue generado con IA, mostrar banner informativo al inicio
+    let aiInfoHtml = '';
+    if (conversionResult.aiGenerated) {
+        aiInfoHtml = `
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h3 style="margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                    🤖 Generado con IA
+                </h3>
+                <p style="margin: 0 0 0.5rem 0; opacity: 0.95; font-size: 0.9rem;">
+                    ${escapeHtml(conversionResult.aiSummary || 'Script convertido usando inteligencia artificial')}
+                </p>
+                ${conversionResult.aiOptimizationsApplied && conversionResult.aiOptimizationsApplied.length > 0 ? `
+                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <strong style="font-size: 0.85rem;">⚡ Optimizaciones aplicadas (${conversionResult.aiOptimizationsApplied.length}):</strong>
+                        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0; font-size: 0.85rem; opacity: 0.95;">
+                            ${conversionResult.aiOptimizationsApplied.map(opt => `<li>${escapeHtml(opt.name || opt)}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
     // Changes
     const changesEl = document.getElementById('log-changes');
     if (conversionResult.log.length === 0) {
-        changesEl.innerHTML = '<div class="log-empty">No hay cambios registrados</div>';
+        changesEl.innerHTML = aiInfoHtml + '<div class="log-empty">No hay cambios registrados</div>';
     } else {
-        changesEl.innerHTML = conversionResult.log
-            .map(log => `<div class="log-item">${escapeHtml(log)}</div>`)
+        const changesHtml = conversionResult.log
+            .map(log => {
+                // Si log es objeto (de IA)
+                if (typeof log === 'object') {
+                    return `
+                        <div class="log-item">
+                            <strong>${escapeHtml(log.message || log.description || '')}</strong>
+                            ${log.details ? `<div style="margin-top: 0.5rem; padding-left: 1rem; border-left: 3px solid #ddd; font-size: 0.85rem; color: #666;"><pre style="white-space: pre-wrap; margin: 0;">${escapeHtml(log.details)}</pre></div>` : ''}
+                        </div>
+                    `;
+                }
+                // Si log es string (clásico)
+                return `<div class="log-item">${escapeHtml(log)}</div>`;
+            })
             .join('');
+        changesEl.innerHTML = aiInfoHtml + changesHtml;
     }
 
     // Warnings
@@ -323,7 +391,13 @@ function updateLogTab() {
         warningsEl.innerHTML = '<div class="log-empty">No hay advertencias</div>';
     } else {
         warningsEl.innerHTML = conversionResult.warnings
-            .map(warning => `<div class="log-item">⚠️ ${escapeHtml(warning)}</div>`)
+            .map(warning => {
+                // Si warning es objeto
+                if (typeof warning === 'object') {
+                    return `<div class="log-item">⚠️ ${escapeHtml(warning.message || warning)}</div>`;
+                }
+                return `<div class="log-item">⚠️ ${escapeHtml(warning)}</div>`;
+            })
             .join('');
     }
 
@@ -1007,6 +1081,97 @@ function updateParamsTab() {
     rows.push("<div class=\"log-item\"><strong>Destino</strong>: table_name=" + esc(p.destino?.table_name) + ", tabla_segunda=" + esc(p.destino?.tabla_segunda) + ", tmp=" + esc(p.destino?.tabla_segunda_tmp) + ", familia=" + esc(p.destino?.familia) + "</div>");
     rows.push("<div class=\"log-item\"><strong>Storage</strong>: container=" + esc((p.storage && p.storage.container)) + "</div>");
     el.innerHTML = rows.join("");
+}
+
+// ===== AI-POWERED CONVERSION =====
+
+/**
+ * Handle conversion method selection change
+ */
+function handleConversionMethodChange(event) {
+    const method = event.target.value;
+    const aiOptions = document.getElementById('ai-method-options');
+
+    if (method === 'ai') {
+        aiOptions.style.display = 'block';
+    } else {
+        aiOptions.style.display = 'none';
+    }
+
+    console.log(`[INFO] Método de conversión seleccionado: ${method}`);
+}
+
+/**
+ * Convert script using AI
+ */
+async function convertWithAI() {
+    // Verificar que aiAnalyzer está disponible
+    if (typeof aiAnalyzer === 'undefined' || !aiAnalyzer) {
+        throw new Error('AI Analyzer no está inicializado. Asegúrate de que ai_ui.js esté cargado.');
+    }
+
+    // Verificar configuración
+    if (!aiAnalyzer.isConfigured()) {
+        throw new Error('Debes configurar tu API key de IA primero. Ve a la pestaña "Verificación de Similitud" y configura tu API.');
+    }
+
+    // Obtener opciones
+    const applyOptimizations = document.getElementById('ai-apply-optimizations')?.checked || false;
+    const scriptName = extractScriptName(currentInputScript) || 'script.py';
+
+    console.log(`[AI] Generando script EDV con IA (optimizaciones: ${applyOptimizations})`);
+
+    // Llamar a IA
+    const result = await aiAnalyzer.generateEDVScript(currentInputScript, {
+        applyOptimizations: applyOptimizations,
+        scriptName: scriptName
+    });
+
+    // Verificar si hubo error
+    if (result.error) {
+        throw new Error(`Error de IA: ${result.error}\n\nRespuesta raw:\n${result.rawResponse}`);
+    }
+
+    if (!result.edvScript) {
+        throw new Error('La IA no generó un script EDV válido');
+    }
+
+    // Crear un resultado de conversión compatible con el formato esperado
+    return {
+        edvScript: result.edvScript,
+        log: result.changes.map(change => ({
+            type: 'change',
+            message: change.description || change,
+            details: change.before && change.after ? `ANTES: ${change.before}\nDESPUÉS: ${change.after}` : ''
+        })),
+        warnings: result.warnings.map(w => ({
+            type: 'warning',
+            message: w
+        })),
+        aiGenerated: true,
+        aiSummary: result.summary,
+        aiOptimizationsApplied: result.optimizationsApplied || [],
+        aiValidationChecklist: result.validationChecklist || {}
+    };
+}
+
+/**
+ * Extract script name from content (look for file name patterns)
+ */
+function extractScriptName(scriptContent) {
+    // Try to find script name in comments
+    const nameMatch = scriptContent.match(/(?:#|""").*?([A-Z_]+\.py)/i);
+    if (nameMatch) {
+        return nameMatch[1];
+    }
+
+    // Try to find table name
+    const tableMatch = scriptContent.match(/PRM_TABLE_NAME.*?['"]([A-Z_]+)['"]/);
+    if (tableMatch) {
+        return `${tableMatch[1]}_EDV.py`;
+    }
+
+    return 'script_EDV.py';
 }
 
 
