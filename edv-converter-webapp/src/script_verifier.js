@@ -505,63 +505,117 @@ class ScriptVerifier {
 
     /**
      * Detecta si una diferencia es una optimización conocida DDV→EDV
+     * BIDIRECCIONAL: Detecta optimización sin importar el orden de los scripts
      */
     isKnownOptimization(category, onlyIn1, onlyIn2) {
         const onlyIn1Str = onlyIn1.join(' ');
         const onlyIn2Str = onlyIn2.join(' ');
 
-        // OPTIMIZACIÓN #2: Cache en memoria vs Write/Read a disco
+        // OPTIMIZACIÓN #2: Cache en memoria vs Write/Read a disco (BIDIRECCIONAL)
         if (category === 'OPERACIONES_LECTURA' || category === 'OPERACIONES_ESCRITURA') {
-            const hasDiskIO = onlyIn1Str.includes('write.format') || onlyIn1Str.includes('read.format');
-            const hasCache = onlyIn2Str.includes('.cache()') || onlyIn2Str.includes('.count()');
+            const str1HasDiskIO = onlyIn1Str.includes('write.format') || onlyIn1Str.includes('read.format');
+            const str2HasDiskIO = onlyIn2Str.includes('write.format') || onlyIn2Str.includes('read.format');
+            const str1HasCache = onlyIn1Str.includes('.cache()') || onlyIn1Str.includes('.count()');
+            const str2HasCache = onlyIn2Str.includes('.cache()') || onlyIn2Str.includes('.count()');
 
-            if (hasDiskIO && (hasCache || onlyIn2Str === 'ninguno')) {
+            // Caso 1: onlyIn1 tiene diskIO, onlyIn2 tiene cache o ninguno
+            if (str1HasDiskIO && (str2HasCache || onlyIn2Str === 'ninguno')) {
                 return {
                     isOptimization: true,
                     name: 'Cache en Memoria',
-                    explanation: `DDV: write/read a disco (lento)\nEDV: .cache() + .count() en memoria (60-80% más rápido)\n\nEsta es una optimización de rendimiento VÁLIDA.`,
+                    explanation: `Script sin optimizar: write/read a disco (lento)\nScript optimizado: .cache() + .count() en memoria (60-80% más rápido)\n\nEsta es una optimización de rendimiento VÁLIDA.`,
+                    badge: 'Optimización'
+                };
+            }
+
+            // Caso 2: onlyIn2 tiene diskIO, onlyIn1 tiene cache o ninguno (orden inverso)
+            if (str2HasDiskIO && (str1HasCache || onlyIn1Str === 'ninguno')) {
+                return {
+                    isOptimization: true,
+                    name: 'Cache en Memoria',
+                    explanation: `Script sin optimizar: write/read a disco (lento)\nScript optimizado: .cache() + .count() en memoria (60-80% más rápido)\n\nEsta es una optimización de rendimiento VÁLIDA.`,
                     badge: 'Optimización'
                 };
             }
         }
 
-        // OPTIMIZACIÓN #4: Consolidación de 3 loops en 1
+        // OPTIMIZACIÓN #4: Consolidación de 3 loops en 1 (BIDIRECCIONAL)
         if (category === 'TRANSFORMACIONES') {
-            const hasOriginalCols = onlyIn1Str.includes('original_cols') && onlyIn1Str.includes('.select(*original_cols');
-            const hasAllNewCols = onlyIn2Str.includes('all_new_cols') && onlyIn2Str.includes('.select("*", *all_new_cols');
+            const str1HasOriginalCols = onlyIn1Str.includes('original_cols') && onlyIn1Str.includes('.select(*original_cols');
+            const str2HasOriginalCols = onlyIn2Str.includes('original_cols') && onlyIn2Str.includes('.select(*original_cols');
+            const str1HasAllNewCols = onlyIn1Str.includes('all_new_cols') && onlyIn1Str.includes('.select("*", *all_new_cols');
+            const str2HasAllNewCols = onlyIn2Str.includes('all_new_cols') && onlyIn2Str.includes('.select("*", *all_new_cols');
 
-            if (hasOriginalCols && hasAllNewCols) {
+            // Caso 1: onlyIn1 tiene original_cols, onlyIn2 tiene all_new_cols
+            if (str1HasOriginalCols && str2HasAllNewCols) {
                 return {
                     isOptimization: true,
                     name: 'Consolidación de Loops',
-                    explanation: `DDV: 3 transformaciones separadas (.select con original_cols)\nEDV: 1 transformación consolidada (.select con all_new_cols)\n\nReducción de 3 stages → 1 stage (15-25% más rápido)`,
+                    explanation: `Script sin optimizar: 3 transformaciones separadas (.select con original_cols)\nScript optimizado: 1 transformación consolidada (.select con all_new_cols)\n\nReducción de 3 stages → 1 stage (15-25% más rápido)`,
+                    badge: 'Optimización'
+                };
+            }
+
+            // Caso 2: onlyIn2 tiene original_cols, onlyIn1 tiene all_new_cols (orden inverso)
+            if (str2HasOriginalCols && str1HasAllNewCols) {
+                return {
+                    isOptimization: true,
+                    name: 'Consolidación de Loops',
+                    explanation: `Script sin optimizar: 3 transformaciones separadas (.select con original_cols)\nScript optimizado: 1 transformación consolidada (.select con all_new_cols)\n\nReducción de 3 stages → 1 stage (15-25% más rápido)`,
                     badge: 'Optimización'
                 };
             }
         }
 
-        // OPTIMIZACIÓN #3: Storage Level MEMORY_AND_DISK
+        // OPTIMIZACIÓN #3: Storage Level MEMORY_AND_DISK (BIDIRECCIONAL)
         if (category === 'TRANSFORMACIONES') {
-            const hasMemoryOnly = onlyIn1Str.includes('MEMORY_ONLY');
-            const hasMemoryAndDisk = onlyIn2Str.includes('MEMORY_AND_DISK');
+            const str1HasMemoryOnly = onlyIn1Str.includes('MEMORY_ONLY');
+            const str2HasMemoryOnly = onlyIn2Str.includes('MEMORY_ONLY');
+            const str1HasMemoryAndDisk = onlyIn1Str.includes('MEMORY_AND_DISK');
+            const str2HasMemoryAndDisk = onlyIn2Str.includes('MEMORY_AND_DISK');
 
-            if (hasMemoryOnly && hasMemoryAndDisk) {
+            // Caso 1: onlyIn1 tiene MEMORY_ONLY, onlyIn2 tiene MEMORY_AND_DISK
+            if (str1HasMemoryOnly && str2HasMemoryAndDisk) {
                 return {
                     isOptimization: true,
                     name: 'Storage Level Mejorado',
-                    explanation: `DDV: MEMORY_ONLY_2 (costoso, riesgo OOM)\nEDV: MEMORY_AND_DISK (más seguro, 10-20% más rápido)\n\nMejora resiliencia y evita OutOfMemory`,
+                    explanation: `Script sin optimizar: MEMORY_ONLY_2 (costoso, riesgo OOM)\nScript optimizado: MEMORY_AND_DISK (más seguro, 10-20% más rápido)\n\nMejora resiliencia y evita OutOfMemory`,
+                    badge: 'Optimización'
+                };
+            }
+
+            // Caso 2: onlyIn2 tiene MEMORY_ONLY, onlyIn1 tiene MEMORY_AND_DISK (orden inverso)
+            if (str2HasMemoryOnly && str1HasMemoryAndDisk) {
+                return {
+                    isOptimization: true,
+                    name: 'Storage Level Mejorado',
+                    explanation: `Script sin optimizar: MEMORY_ONLY_2 (costoso, riesgo OOM)\nScript optimizado: MEMORY_AND_DISK (más seguro, 10-20% más rápido)\n\nMejora resiliencia y evita OutOfMemory`,
                     badge: 'Optimización'
                 };
             }
         }
 
-        // VARIABLES/WIDGETS adicionales EDV (ESPERADO, no es error)
+        // VARIABLES/WIDGETS adicionales EDV (ESPERADO, no es error) - BIDIRECCIONAL
         if (category === 'VARIABLES_GLOBALES' || category === 'WIDGETS') {
-            const hasEdvVars = onlyIn2Str.includes('PRM_CATALOG_NAME_EDV') ||
-                               onlyIn2Str.includes('PRM_ESQUEMA_TABLA_EDV') ||
-                               onlyIn2Str.includes('PRM_ESQUEMA_TABLA_ESCRITURA');
+            const str1HasEdvVars = onlyIn1Str.includes('PRM_CATALOG_NAME_EDV') ||
+                                   onlyIn1Str.includes('PRM_ESQUEMA_TABLA_EDV') ||
+                                   onlyIn1Str.includes('PRM_ESQUEMA_TABLA_ESCRITURA');
+            const str2HasEdvVars = onlyIn2Str.includes('PRM_CATALOG_NAME_EDV') ||
+                                   onlyIn2Str.includes('PRM_ESQUEMA_TABLA_EDV') ||
+                                   onlyIn2Str.includes('PRM_ESQUEMA_TABLA_ESCRITURA');
 
-            if (hasEdvVars && onlyIn1Str === 'ninguno') {
+            // Caso 1: onlyIn2 tiene vars EDV, onlyIn1 es ninguno
+            if (str2HasEdvVars && onlyIn1Str === 'ninguno') {
+                return {
+                    isOptimization: true,
+                    name: 'Variables EDV Esperadas',
+                    explanation: `EDV requiere variables adicionales para separar lectura (DDV) y escritura (EDV):\n- PRM_CATALOG_NAME_EDV\n- PRM_ESQUEMA_TABLA_EDV\n- PRM_ESQUEMA_TABLA_ESCRITURA\n\nEsto es parte del diseño correcto DDV→EDV.`,
+                    badge: 'Schema Común'
+                };
+            }
+
+            // Caso 2: onlyIn1 tiene vars EDV, onlyIn2 es ninguno (orden inverso)
+            if (str1HasEdvVars && onlyIn2Str === 'ninguno') {
                 return {
                     isOptimization: true,
                     name: 'Variables EDV Esperadas',
@@ -590,6 +644,19 @@ class ScriptVerifier {
                     explanation: `Ambos scripts escriben a la misma tabla, solo difieren en la variable usada:\nDDV: Usa una variable\nEDV: Usa otra variable\n\nLa tabla destino es la misma.`,
                     badge: 'Formato Común'
                 };
+            }
+        }
+
+        // DETECCIÓN DE trim() - IMPORTANTE: NO es optimización, es cambio de lógica
+        // Si solo hay trim() en uno y no en otro, NO es optimización
+        if (category === 'TRANSFORMACIONES') {
+            const str1HasTrim = onlyIn1Str.includes('trim(');
+            const str2HasTrim = onlyIn2Str.includes('trim(');
+
+            // Si uno tiene trim y el otro no, es un cambio de lógica real
+            if ((str1HasTrim && !str2HasTrim) || (str2HasTrim && !str1HasTrim)) {
+                // NO es optimización - dejar que se reporte como diferencia real
+                return { isOptimization: false };
             }
         }
 
