@@ -16,7 +16,7 @@ class AIAnalyzer {
         this.endpoints = {
             openai: 'https://api.openai.com/v1/chat/completions',
             claude: 'https://api.anthropic.com/v1/messages',
-            gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+            gemini: 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent'
         };
         this.models = {
             openai: 'gpt-5',
