@@ -1094,6 +1094,21 @@ function handleConversionMethodChange(event) {
 
     if (method === 'ai') {
         aiOptions.style.display = 'block';
+
+        // Verificar si aiAnalyzer está configurado
+        if (typeof aiAnalyzer !== 'undefined' && aiAnalyzer && !aiAnalyzer.isConfigured()) {
+            // Mostrar notificación y abrir modal de configuración
+            setTimeout(() => {
+                if (confirm('🤖 Para usar la conversión con IA necesitas configurar tu API key.\n\n¿Deseas configurarla ahora?')) {
+                    // Abrir modal de configuración de IA (de la pestaña de verificación)
+                    if (typeof openAIConfigModal === 'function') {
+                        openAIConfigModal();
+                    } else {
+                        alert('⚠️ Ve a la pestaña "Verificación de Similitud" para configurar tu API key de IA.');
+                    }
+                }
+            }, 100);
+        }
     } else {
         aiOptions.style.display = 'none';
     }
@@ -1110,9 +1125,13 @@ async function convertWithAI() {
         throw new Error('AI Analyzer no está inicializado. Asegúrate de que ai_ui.js esté cargado.');
     }
 
-    // Verificar configuración
+    // Verificar configuración - si no está configurada, abrir modal
     if (!aiAnalyzer.isConfigured()) {
-        throw new Error('Debes configurar tu API key de IA primero. Ve a la pestaña "Verificación de Similitud" y configura tu API.');
+        // Abrir modal de configuración
+        if (typeof openAIConfigModal === 'function') {
+            openAIConfigModal();
+        }
+        throw new Error('⚠️ Debes configurar tu API key de IA primero.\n\nSe ha abierto la ventana de configuración.');
     }
 
     // Obtener opciones
