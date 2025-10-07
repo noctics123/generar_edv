@@ -199,24 +199,29 @@
                             </div>
                         </label>
 
-                        <!-- AI Method -->
+                        <!-- Hybrid AI Method -->
                         <label class="conversion-method-card" style="cursor: pointer; display: flex; align-items: start; gap: 1rem; padding: 1rem; border: 2px solid #dee2e6; border-radius: 8px; transition: all 0.2s;">
                             <input type="radio" name="conversion-method" value="ai" style="margin-top: 0.25rem;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: #333; margin-bottom: 0.25rem;">
-                                    🤖 Método con IA (Experimental)
+                                    🤖 Método Híbrido (Clásico + IA)
                                 </div>
                                 <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">
-                                    Conversión inteligente usando LLMs. Adaptable a casos complejos.
+                                    Conversión rápida con reglas + IA analiza y sugiere mejoras/optimizaciones.
                                 </div>
                                 <div id="ai-method-options" style="display: none; padding-left: 0;">
                                     <label class="switch-container" style="margin-bottom: 0.5rem;">
-                                        <input type="checkbox" id="ai-apply-optimizations">
+                                        <input type="checkbox" id="ai-apply-optimizations" checked>
                                         <span class="switch-slider"></span>
-                                        <span class="switch-label">⚡ Aplicar 6 optimizaciones de rendimiento</span>
+                                        <span class="switch-label">⚡ Sugerir optimizaciones de rendimiento</span>
                                     </label>
-                                    <div style="padding: 0.75rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; font-size: 0.8rem; color: #856404;">
-                                        ⚠️ <strong>Requiere API key configurada.</strong> La conversión con IA consume tokens del proveedor seleccionado.
+                                    <label class="switch-container" style="margin-bottom: 0.5rem;">
+                                        <input type="checkbox" id="ai-suggest-improvements" checked>
+                                        <span class="switch-slider"></span>
+                                        <span class="switch-label">💡 Sugerir mejoras de lógica</span>
+                                    </label>
+                                    <div style="padding: 0.75rem; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px; font-size: 0.8rem; color: #1565c0;">
+                                        ℹ️ <strong>Modo híbrido:</strong> Conversión instantánea + análisis IA (rápido y económico)
                                     </div>
                                 </div>
                             </div>
@@ -715,9 +720,9 @@
     <script src="edv-converter-webapp/src/verification_ui.js?v=3.3"></script>
     <script src="edv-converter-webapp/src/comparison-modal.js?v=3.4"></script>
     <!-- AI Analysis Scripts -->
-    <script src="edv-converter-webapp/src/ai_analyzer.js?v=2.0"></script>
+    <script src="edv-converter-webapp/src/ai_analyzer.js?v=3.0"></script>
     <script src="edv-converter-webapp/src/ai_ui.js?v=2.0"></script>
-    <script src="edv-converter-webapp/src/app.js?v=4.1"></script>
+    <script src="edv-converter-webapp/src/app.js?v=5.0"></script>
 </body>
 </html>
 

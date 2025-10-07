@@ -130,6 +130,43 @@ class AIAnalyzer {
     }
 
     /**
+     * MÉTODO HÍBRIDO: Analizar script EDV ya convertido y sugerir mejoras
+     * Mucho más rápido y económico que regenerar todo el código
+     */
+    async analyzeAndSuggest(ddvScript, edvScript, options = {}) {
+        if (!this.isConfigured()) {
+            throw new Error('AI Analyzer no está configurado. Configura tu API key primero.');
+        }
+
+        const suggestOptimizations = options.suggestOptimizations !== false;
+        const suggestImprovements = options.suggestImprovements !== false;
+        const scriptName = options.scriptName || 'script.py';
+
+        // Generar prompt para análisis híbrido
+        const prompt = this.generateHybridAnalysisPrompt(
+            ddvScript,
+            edvScript,
+            scriptName,
+            suggestOptimizations,
+            suggestImprovements
+        );
+
+        // Llamar a la API según el proveedor
+        let response;
+        if (this.provider === 'openai') {
+            response = await this.callOpenAI(prompt);
+        } else if (this.provider === 'claude') {
+            response = await this.callClaude(prompt);
+        } else if (this.provider === 'gemini') {
+            response = await this.callGemini(prompt);
+        } else {
+            throw new Error(`Proveedor desconocido: ${this.provider}`);
+        }
+
+        return this.parseHybridAnalysisResponse(response);
+    }
+
+    /**
      * Generar prompt robusto según el modo
      */
     generatePrompt(script1, script2, mode, script1Name, script2Name) {
@@ -533,6 +570,150 @@ IMPORTANTE:
                 validationChecklist: {},
                 warnings: [],
                 summary: 'Error al parsear respuesta de IA'
+            };
+        }
+    }
+
+    /**
+     * Generar prompt para análisis híbrido (DDV + EDV ya convertido)
+     */
+    generateHybridAnalysisPrompt(ddvScript, edvScript, scriptName, suggestOptimizations, suggestImprovements) {
+        return `Eres un experto en análisis de código PySpark y conversiones DDV→EDV para el Banco de Crédito del Perú (BCP).
+
+# OBJETIVO: ANÁLISIS HÍBRIDO
+
+Tengo un script DDV original y su conversión a EDV ya realizada por un convertidor automático.
+Tu tarea es ANALIZAR la conversión y SUGERIR mejoras adicionales (NO regenerar el código completo).
+
+# SCRIPT DDV ORIGINAL (${scriptName}):
+
+\`\`\`python
+${ddvScript}
+\`\`\`
+
+# SCRIPT EDV CONVERTIDO (${scriptName.replace('.py', '_EDV.py')}):
+
+\`\`\`python
+${edvScript}
+\`\`\`
+
+# TU ANÁLISIS DEBE INCLUIR:
+
+## 1. VALIDACIÓN DE CONVERSIÓN
+- ¿La conversión DDV→EDV es correcta?
+- ¿Se aplicaron todas las reglas obligatorias (widgets EDV, schemas separados, _v suffix)?
+- ¿Hay errores o inconsistencias?
+
+${suggestOptimizations ? `
+## 2. OPTIMIZACIONES DE RENDIMIENTO
+Analiza si se pueden aplicar estas optimizaciones:
+- Configuraciones Spark AQE
+- Cache en memoria (reemplazar write/read a disco)
+- Storage Level MEMORY_AND_DISK
+- Consolidación de loops con select()
+- Eliminar coalesce() innecesarios
+- Repartition pre-escritura
+
+Para cada optimización, indica:
+- ¿Se puede aplicar? (sí/no)
+- ¿Dónde aplicarla? (línea aproximada o nombre de función)
+- Impacto esperado (alto/medio/bajo)
+- Código sugerido` : ''}
+
+${suggestImprovements ? `
+## 3. MEJORAS DE LÓGICA Y CALIDAD
+- Lógica de negocio que podría simplificarse
+- Redundancias o código duplicado
+- Mejores prácticas PySpark no aplicadas
+- Manejo de errores mejorable
+- Nombres de variables más claros` : ''}
+
+# FORMATO DE RESPUESTA (JSON):
+
+{
+  "conversion_valid": true/false,
+  "conversion_issues": ["lista de problemas encontrados en la conversión"],
+  "optimizations": [
+    {
+      "name": "Nombre de la optimización",
+      "applicable": true/false,
+      "location": "Función o línea donde aplicar",
+      "impact": "high/medium/low",
+      "code_suggestion": "Código sugerido (si aplica)",
+      "explanation": "Por qué es beneficioso"
+    }
+  ],
+  "improvements": [
+    {
+      "category": "logic/quality/naming/error_handling",
+      "description": "Descripción de la mejora",
+      "location": "Dónde aplicar",
+      "code_suggestion": "Código sugerido (opcional)",
+      "benefit": "Beneficio de aplicar esta mejora"
+    }
+  ],
+  "overall_quality": "excellent/good/fair/needs_improvement",
+  "summary": "Resumen general del análisis (2-3 líneas)"
+}
+
+IMPORTANTE:
+- Responde SOLO con JSON válido
+- NO regeneres el código completo
+- Solo sugiere cambios específicos y accionables
+- Sé conciso pero preciso`;
+    }
+
+    /**
+     * Parsear respuesta del análisis híbrido
+     */
+    parseHybridAnalysisResponse(responseText) {
+        try {
+            let jsonText = responseText;
+
+            // Método 1: Extraer de bloques ```json ... ```
+            let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonText = jsonMatch[1];
+            } else {
+                // Método 2: Extraer de bloques ``` ... ```
+                jsonMatch = responseText.match(/```\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                    jsonText = jsonMatch[1];
+                }
+            }
+
+            // Método 3: Limpiar prefijos/sufijos
+            jsonText = jsonText.trim();
+            const jsonStart = jsonText.indexOf('{');
+            if (jsonStart > 0) {
+                jsonText = jsonText.substring(jsonStart);
+            }
+            const jsonEnd = jsonText.lastIndexOf('}');
+            if (jsonEnd > 0 && jsonEnd < jsonText.length - 1) {
+                jsonText = jsonText.substring(0, jsonEnd + 1);
+            }
+
+            const result = JSON.parse(jsonText);
+
+            return {
+                conversionValid: result.conversion_valid !== false,
+                conversionIssues: result.conversion_issues || [],
+                optimizations: result.optimizations || [],
+                improvements: result.improvements || [],
+                overallQuality: result.overall_quality || 'good',
+                summary: result.summary || ''
+            };
+        } catch (e) {
+            console.error('[AIAnalyzer] Error parsing hybrid analysis response:', e);
+            return {
+                conversionValid: true,
+                conversionIssues: [],
+                optimizations: [],
+                improvements: [],
+                overallQuality: 'unknown',
+                summary: 'Error al parsear respuesta de IA',
+                error: e.message,
+                rawResponse: responseText
             };
         }
     }

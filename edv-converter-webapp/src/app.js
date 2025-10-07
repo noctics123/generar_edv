@@ -341,23 +341,92 @@ function updateValidationResults() {
 function updateLogTab() {
     // Si fue generado con IA, mostrar banner informativo al inicio
     let aiInfoHtml = '';
-    if (conversionResult.aiGenerated) {
+    if (conversionResult.aiGenerated && conversionResult.hybrid) {
+        // MODO HÍBRIDO: Mostrar análisis y sugerencias
+        const analysis = conversionResult.aiAnalysis || {};
+        const qualityColors = {
+            'excellent': '#10b981',
+            'good': '#3b82f6',
+            'fair': '#f59e0b',
+            'needs_improvement': '#ef4444'
+        };
+        const qualityColor = qualityColors[conversionResult.aiQuality] || '#3b82f6';
+
         aiInfoHtml = `
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                <h3 style="margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.5rem;">
-                    🤖 Generado con IA
-                </h3>
-                <p style="margin: 0 0 0.5rem 0; opacity: 0.95; font-size: 0.9rem;">
-                    ${escapeHtml(conversionResult.aiSummary || 'Script convertido usando inteligencia artificial')}
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        🤖 Modo Híbrido (Clásico + IA)
+                    </h3>
+                    <span style="background: ${qualityColor}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                        ${conversionResult.aiQuality || 'good'}
+                    </span>
+                </div>
+                <p style="margin: 0 0 0.75rem 0; opacity: 0.95; font-size: 0.9rem;">
+                    ${escapeHtml(conversionResult.aiSummary || 'Conversión clásica completada + análisis IA')}
                 </p>
-                ${conversionResult.aiOptimizationsApplied && conversionResult.aiOptimizationsApplied.length > 0 ? `
-                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <strong style="font-size: 0.85rem;">⚡ Optimizaciones aplicadas (${conversionResult.aiOptimizationsApplied.length}):</strong>
-                        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0; font-size: 0.85rem; opacity: 0.95;">
-                            ${conversionResult.aiOptimizationsApplied.map(opt => `<li>${escapeHtml(opt.name || opt)}</li>`).join('')}
+
+                ${conversionResult.aiConversionIssues && conversionResult.aiConversionIssues.length > 0 ? `
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.2); border-left: 3px solid #ef4444; border-radius: 4px;">
+                        <strong style="font-size: 0.85rem;">⚠️ Issues encontrados (${conversionResult.aiConversionIssues.length}):</strong>
+                        <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0; font-size: 0.85rem;">
+                            ${conversionResult.aiConversionIssues.map(issue => `<li>${escapeHtml(issue)}</li>`).join('')}
                         </ul>
                     </div>
                 ` : ''}
+
+                ${conversionResult.aiOptimizations && conversionResult.aiOptimizations.length > 0 ? `
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(16, 185, 129, 0.2); border-left: 3px solid #10b981; border-radius: 4px;">
+                        <strong style="font-size: 0.85rem;">⚡ Optimizaciones sugeridas (${conversionResult.aiOptimizations.filter(o => o.applicable).length}/${conversionResult.aiOptimizations.length}):</strong>
+                        <div style="margin-top: 0.5rem; max-height: 200px; overflow-y: auto;">
+                            ${conversionResult.aiOptimizations.map(opt => {
+                                if (!opt.applicable) return '';
+                                const impactColors = { high: '#ef4444', medium: '#f59e0b', low: '#3b82f6' };
+                                const impactColor = impactColors[opt.impact] || '#3b82f6';
+                                return `
+                                    <div style="margin-bottom: 0.75rem; padding: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                            <strong style="font-size: 0.85rem;">${escapeHtml(opt.name)}</strong>
+                                            <span style="background: ${impactColor}; padding: 0.125rem 0.5rem; border-radius: 8px; font-size: 0.7rem; font-weight: 600;">
+                                                ${opt.impact}
+                                            </span>
+                                        </div>
+                                        <div style="font-size: 0.8rem; opacity: 0.9; margin-bottom: 0.25rem;">
+                                            📍 ${escapeHtml(opt.location)}
+                                        </div>
+                                        <div style="font-size: 0.8rem; opacity: 0.85;">
+                                            💡 ${escapeHtml(opt.explanation)}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                ${conversionResult.aiImprovements && conversionResult.aiImprovements.length > 0 ? `
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(59, 130, 246, 0.2); border-left: 3px solid #3b82f6; border-radius: 4px;">
+                        <strong style="font-size: 0.85rem;">💡 Mejoras sugeridas (${conversionResult.aiImprovements.length}):</strong>
+                        <div style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto;">
+                            ${conversionResult.aiImprovements.map(imp => `
+                                <div style="margin-bottom: 0.5rem; font-size: 0.8rem;">
+                                    <strong>${escapeHtml(imp.description)}</strong><br>
+                                    <span style="opacity: 0.85;">📍 ${escapeHtml(imp.location)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (conversionResult.aiGenerated) {
+        // Modo IA puro (legacy - por si acaso)
+        aiInfoHtml = `
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h3 style="margin: 0 0 0.5rem 0;">🤖 Generado con IA</h3>
+                <p style="margin: 0; opacity: 0.95; font-size: 0.9rem;">
+                    ${escapeHtml(conversionResult.aiSummary || 'Script convertido usando inteligencia artificial')}
+                </p>
             </div>
         `;
     }
@@ -1134,43 +1203,51 @@ async function convertWithAI() {
         throw new Error('⚠️ Debes configurar tu API key de IA primero.\n\nSe ha abierto la ventana de configuración.');
     }
 
-    // Obtener opciones
-    const applyOptimizations = document.getElementById('ai-apply-optimizations')?.checked || false;
+    console.log(`[HYBRID AI] Paso 1: Conversión clásica (instantánea)`);
+
+    // PASO 1: Convertir con método clásico (rápido)
+    const converter = new EDVConverter();
+    const classicResult = converter.convert(currentInputScript);
+    const edvScript = classicResult.edvScript;
+
+    console.log(`[HYBRID AI] Conversión clásica completada: ${classicResult.log.length} cambios`);
+
+    // Obtener opciones de análisis
+    const suggestOptimizations = document.getElementById('ai-apply-optimizations')?.checked !== false;
+    const suggestImprovements = document.getElementById('ai-suggest-improvements')?.checked !== false;
     const scriptName = extractScriptName(currentInputScript) || 'script.py';
 
-    console.log(`[AI] Generando script EDV con IA (optimizaciones: ${applyOptimizations})`);
+    console.log(`[HYBRID AI] Paso 2: Análisis IA (sugerencias de mejora)`);
+    console.log(`  - Optimizaciones: ${suggestOptimizations}`);
+    console.log(`  - Mejoras: ${suggestImprovements}`);
 
-    // Llamar a IA
-    const result = await aiAnalyzer.generateEDVScript(currentInputScript, {
-        applyOptimizations: applyOptimizations,
-        scriptName: scriptName
+    // PASO 2: Analizar con IA y obtener sugerencias
+    const aiAnalysis = await aiAnalyzer.analyzeAndSuggest(currentInputScript, edvScript, {
+        suggestOptimizations,
+        suggestImprovements,
+        scriptName
     });
 
-    // Verificar si hubo error
-    if (result.error) {
-        throw new Error(`Error de IA: ${result.error}\n\nRespuesta raw:\n${result.rawResponse}`);
-    }
+    console.log(`[HYBRID AI] Análisis IA completado`);
+    console.log(`  - Conversión válida: ${aiAnalysis.conversionValid}`);
+    console.log(`  - Issues: ${aiAnalysis.conversionIssues.length}`);
+    console.log(`  - Optimizaciones sugeridas: ${aiAnalysis.optimizations.length}`);
+    console.log(`  - Mejoras sugeridas: ${aiAnalysis.improvements.length}`);
+    console.log(`  - Calidad: ${aiAnalysis.overallQuality}`);
 
-    if (!result.edvScript) {
-        throw new Error('La IA no generó un script EDV válido');
-    }
-
-    // Crear un resultado de conversión compatible con el formato esperado
+    // Crear resultado híbrido
     return {
-        edvScript: result.edvScript,
-        log: result.changes.map(change => ({
-            type: 'change',
-            message: change.description || change,
-            details: change.before && change.after ? `ANTES: ${change.before}\nDESPUÉS: ${change.after}` : ''
-        })),
-        warnings: result.warnings.map(w => ({
-            type: 'warning',
-            message: w
-        })),
+        edvScript: edvScript,
+        log: classicResult.log, // Cambios del clásico
+        warnings: classicResult.warnings,
         aiGenerated: true,
-        aiSummary: result.summary,
-        aiOptimizationsApplied: result.optimizationsApplied || [],
-        aiValidationChecklist: result.validationChecklist || {}
+        hybrid: true, // Marca que es híbrido
+        aiAnalysis: aiAnalysis, // Análisis y sugerencias de IA
+        aiSummary: aiAnalysis.summary,
+        aiOptimizations: aiAnalysis.optimizations,
+        aiImprovements: aiAnalysis.improvements,
+        aiConversionIssues: aiAnalysis.conversionIssues,
+        aiQuality: aiAnalysis.overallQuality
     };
 }
 
