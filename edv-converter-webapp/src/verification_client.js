@@ -466,7 +466,7 @@ class VerificationUI {
             html += `</div></div>`;
         }
 
-        // Tab 5: Snippets de Código
+        // Tab 5: Snippets de Código (con highlighting de diferencias)
         if (diff.codeSnippets) {
             html += `
                 <div class="detail-tab">
@@ -474,20 +474,23 @@ class VerificationUI {
                     <div class="code-snippets">
             `;
 
-            if (diff.codeSnippets.script1) {
+            const snippet1 = diff.codeSnippets.script1 || '';
+            const snippet2 = diff.codeSnippets.script2 || '';
+
+            if (snippet1) {
                 html += `
-                    <div class="code-snippet">
-                        <div class="snippet-label">Script 1:</div>
-                        <pre class="snippet-code"><code>${this.escapeHtml(diff.codeSnippets.script1)}</code></pre>
+                    <div class="code-snippet code-snippet-removed">
+                        <div class="snippet-label">❌ Script 1 (DDV):</div>
+                        <pre class="snippet-code snippet-code-removed"><code>${this.highlightDifferences(snippet1, snippet2, 'removed')}</code></pre>
                     </div>
                 `;
             }
 
-            if (diff.codeSnippets.script2) {
+            if (snippet2) {
                 html += `
-                    <div class="code-snippet">
-                        <div class="snippet-label">Script 2:</div>
-                        <pre class="snippet-code"><code>${this.escapeHtml(diff.codeSnippets.script2)}</code></pre>
+                    <div class="code-snippet code-snippet-added">
+                        <div class="snippet-label">✅ Script 2 (EDV):</div>
+                        <pre class="snippet-code snippet-code-added"><code>${this.highlightDifferences(snippet2, snippet1, 'added')}</code></pre>
                     </div>
                 `;
             }
@@ -613,6 +616,27 @@ class VerificationUI {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    /**
+     * Resalta diferencias entre dos textos
+     */
+    highlightDifferences(text, otherText, mode) {
+        if (!text || !otherText) {
+            return this.escapeHtml(text || '');
+        }
+
+        // Simplificado: resaltar todo el texto si es diferente
+        if (text.trim() !== otherText.trim()) {
+            const escaped = this.escapeHtml(text);
+            if (mode === 'removed') {
+                return `<span class="diff-highlight diff-highlight-removed">${escaped}</span>`;
+            } else {
+                return `<span class="diff-highlight diff-highlight-added">${escaped}</span>`;
+            }
+        }
+
+        return this.escapeHtml(text);
+    }
 }
 
 // Crear instancias globales
@@ -626,17 +650,28 @@ function toggleDiffDetails(expandId) {
     const detailsDiv = document.getElementById(expandId);
     const button = document.querySelector(`[onclick*="${expandId}"]`);
 
-    if (!detailsDiv || !button) return;
+    if (!detailsDiv || !button) {
+        console.warn('[toggleDiffDetails] No se encontró detailsDiv o button:', expandId);
+        return;
+    }
 
-    const isExpanded = detailsDiv.style.display !== 'none';
+    const isExpanded = detailsDiv.style.display === 'block';
 
     if (isExpanded) {
+        // Ocultar
         detailsDiv.style.display = 'none';
-        button.querySelector('.expand-icon').textContent = '▼';
-        button.innerHTML = button.innerHTML.replace('Ocultar', 'Ver');
+        const icon = button.querySelector('.expand-icon');
+        if (icon) icon.textContent = '▼';
+        // Cambiar solo el texto sin romper el HTML
+        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+        if (textNode) textNode.textContent = ' Ver Detalles';
     } else {
+        // Mostrar
         detailsDiv.style.display = 'block';
-        button.querySelector('.expand-icon').textContent = '▲';
-        button.innerHTML = button.innerHTML.replace('Ver', 'Ocultar');
+        const icon = button.querySelector('.expand-icon');
+        if (icon) icon.textContent = '▲';
+        // Cambiar solo el texto sin romper el HTML
+        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+        if (textNode) textNode.textContent = ' Ocultar Detalles';
     }
 }

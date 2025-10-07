@@ -348,6 +348,14 @@
     overflow: hidden;
 }
 
+.code-snippet-removed {
+    border-left: 4px solid #ef4444;
+}
+
+.code-snippet-added {
+    border-left: 4px solid #10b981;
+}
+
 .snippet-label {
     background: #f3f4f6;
     padding: 0.5rem 1rem;
@@ -368,8 +376,35 @@
     overflow-x: auto;
 }
 
+.snippet-code-removed {
+    background: #2d1e1e; /* Fondo rojizo oscuro */
+}
+
+.snippet-code-added {
+    background: #1e2d1e; /* Fondo verdoso oscuro */
+}
+
 .snippet-code code {
     color: inherit;
+}
+
+/* Highlighting de diferencias en snippets */
+.diff-highlight {
+    padding: 0.125rem 0.25rem;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.diff-highlight-removed {
+    background: #7f1d1d; /* Rojo oscuro */
+    color: #fca5a5; /* Rojo claro */
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.diff-highlight-added {
+    background: #14532d; /* Verde oscuro */
+    color: #86efac; /* Verde claro */
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
 }
 
 /* Scrollbar para snippets */
