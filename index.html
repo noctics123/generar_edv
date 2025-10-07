@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/verification.css?v=3.5.4">
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/comparison-modal.css?v=3.5">
     <link rel="stylesheet" href="edv-converter-webapp/src/styles/detailed-diff.css?v=3.5.2">
+    <link rel="stylesheet" href="edv-converter-webapp/src/styles/ai.css">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.ico">
@@ -417,6 +418,30 @@
                     </div>
                 </div>
 
+                <!-- AI Analysis Controls -->
+                <div class="ai-controls">
+                    <div class="ai-toggle-container">
+                        <label class="ai-toggle-label">
+                            <input type="checkbox" id="enable-ai-analysis">
+                            <span>🤖 Habilitar Análisis con IA (Opcional)</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                            <div id="ai-config-status">
+                                <span style="color: rgba(255,255,255,0.8); font-weight: 600;">
+                                    ❌ No configurado
+                                </span>
+                            </div>
+                            <button type="button" id="configure-ai-btn">
+                                ⚙️ Configurar API
+                            </button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.9rem; color: rgba(255,255,255,0.9);">
+                        <strong>💡 Análisis Profundo:</strong> Usa OpenAI GPT-4, Claude Sonnet, o Google Gemini para detectar optimizaciones,
+                        cambios de lógica y validar conversiones DDV→EDV con contexto completo del proyecto BCP.
+                    </div>
+                </div>
+
                 <!-- Dual Script Upload -->
                 <div class="dual-script-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
 
@@ -518,6 +543,9 @@
                     <button id="verify-scripts-btn" class="btn btn-primary btn-large">
                         🔍 Verificar Similitud
                     </button>
+                    <button id="verify-with-ai-btn" class="btn btn-primary btn-large" style="display: none;">
+                        🤖 Verificar con IA
+                    </button>
                 </div>
 
                 <!-- Verification Log (Console visible) -->
@@ -537,6 +565,11 @@
                 <div id="verification-results" style="display: none; margin-top: 2rem;">
                     <h3 style="margin-bottom: 1.5rem;">📊 Resultados de Verificación</h3>
                     <div id="verification-report"></div>
+                </div>
+
+                <!-- AI Results Container -->
+                <div id="ai-results-container" style="display: none;">
+                    <!-- Populated by JavaScript -->
                 </div>
 
             </section>
@@ -579,6 +612,49 @@
         </div>
     </div>
 
+    <!-- AI Configuration Modal -->
+    <div id="ai-config-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🤖 Configurar Análisis con IA</h3>
+                <button type="button" id="close-ai-modal" class="modal-close">×</button>
+            </div>
+
+            <div class="form-group">
+                <label for="ai-provider">Proveedor de IA:</label>
+                <select id="ai-provider">
+                    <option value="openai">OpenAI (GPT-4 Turbo)</option>
+                    <option value="claude">Anthropic Claude (Sonnet 3.5)</option>
+                    <option value="gemini">Google Gemini Pro</option>
+                </select>
+                <p class="form-help">
+                    Selecciona el proveedor de IA que prefieras. Cada uno tiene diferentes fortalezas en análisis de código.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label for="ai-api-key">API Key:</label>
+                <input type="password" id="ai-api-key" placeholder="sk-..." autocomplete="off">
+                <p class="form-help">
+                    Tu API key se almacena localmente en tu navegador (localStorage). Nunca se envía a nuestros servidores.
+                    <br><strong>Obtén tu API key:</strong>
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a> |
+                    <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Claude</a> |
+                    <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener">Gemini</a>
+                </p>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="clear-ai-config" class="btn-modal btn-modal-danger">
+                    🗑️ Limpiar
+                </button>
+                <button type="button" id="save-ai-config" class="btn-modal btn-modal-primary">
+                    💾 Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Prism.js Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
@@ -592,6 +668,9 @@
     <script src="edv-converter-webapp/src/verification_client.js?v=3.5.4"></script>
     <script src="edv-converter-webapp/src/verification_ui.js?v=3.3"></script>
     <script src="edv-converter-webapp/src/comparison-modal.js?v=3.4"></script>
+    <!-- AI Analysis Scripts -->
+    <script src="edv-converter-webapp/src/ai_analyzer.js"></script>
+    <script src="edv-converter-webapp/src/ai_ui.js"></script>
     <script src="edv-converter-webapp/src/app.js?v=3.3"></script>
 </body>
 </html>
