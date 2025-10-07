@@ -1,4 +1,4 @@
-# 🚀 Generador EDV - BCP Analytics
+# 🚀 Generador EDV - Analytics
 
 Repositorio de scripts optimizados de matriz de transacciones y herramienta web de conversión automática DDV a EDV para BCP Analytics.
 
@@ -127,7 +127,7 @@ MIT
 
 ## 👥 Autores
 
-BCP Analytics Team | Generado con [Claude Code](https://claude.com/claude-code)
+Analytics Team | Generado con [Claude Code](https://claude.com/claude-code)
 
 ---
 
