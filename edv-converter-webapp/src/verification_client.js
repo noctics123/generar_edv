@@ -226,14 +226,42 @@ class VerificationUI {
             `;
         }
 
-        let html = '<div class="differences-list"><h3>Diferencias Encontradas</h3>';
+        let html = '<div class="differences-list">';
+
+        // Header con filtros
+        html += `
+            <div class="differences-header">
+                <h3>Diferencias Encontradas</h3>
+                <div class="differences-filters">
+                    <button class="filter-btn active" data-filter="all" onclick="filterDifferences('all')">
+                        Todas (${report.differences.length})
+                    </button>
+                    <button class="filter-btn" data-filter="CRITICAL" onclick="filterDifferences('CRITICAL')">
+                        Críticas (${report.critical_count})
+                    </button>
+                    <button class="filter-btn" data-filter="HIGH" onclick="filterDifferences('HIGH')">
+                        Altas (${report.high_count})
+                    </button>
+                    <button class="filter-btn" data-filter="MEDIUM" onclick="filterDifferences('MEDIUM')">
+                        Medias (${report.medium_count})
+                    </button>
+                    <button class="filter-btn" data-filter="LOW" onclick="filterDifferences('LOW')">
+                        Bajas (${report.low_count + report.info_count})
+                    </button>
+                </div>
+            </div>
+        `;
 
         // Agrupar por severidad
         const grouped = this.groupBySeverity(report.differences);
 
+        // Contador global para IDs únicos
+        let globalIndex = 0;
+
         ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'].forEach(severity => {
             if (grouped[severity] && grouped[severity].length > 0) {
-                html += this.renderSeverityGroup(severity, grouped[severity]);
+                html += this.renderSeverityGroup(severity, grouped[severity], globalIndex);
+                globalIndex += grouped[severity].length;
             }
         });
 
@@ -265,7 +293,7 @@ class VerificationUI {
     /**
      * Renderiza grupo de severidad
      */
-    renderSeverityGroup(severity, differences) {
+    renderSeverityGroup(severity, differences, startIndex) {
         const severityLabel = {
             CRITICAL: 'Criticas',
             HIGH: 'Altas',
@@ -281,7 +309,8 @@ class VerificationUI {
         `;
 
         differences.forEach((diff, index) => {
-            html += this.renderDifference(diff, index);
+            // Usar índice global único
+            html += this.renderDifference(diff, startIndex + index);
         });
 
         html += '</div></div>';
@@ -674,4 +703,33 @@ function toggleDiffDetails(expandId) {
         const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
         if (textNode) textNode.textContent = ' Ocultar Detalles';
     }
+}
+
+/**
+ * Filtra diferencias por severidad (función global para onclick)
+ */
+function filterDifferences(filter) {
+    console.log('[filterDifferences] Filtro:', filter);
+
+    // Actualizar botones activos
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-filter="${filter}"]`)?.classList.add('active');
+
+    // Mostrar/ocultar grupos de severidad
+    const severityGroups = document.querySelectorAll('.severity-group');
+
+    severityGroups.forEach(group => {
+        if (filter === 'all') {
+            group.style.display = 'block';
+        } else {
+            const groupClass = `severity-${filter.toLowerCase()}`;
+            if (group.classList.contains(groupClass)) {
+                group.style.display = 'block';
+            } else {
+                group.style.display = 'none';
+            }
+        }
+    });
 }
