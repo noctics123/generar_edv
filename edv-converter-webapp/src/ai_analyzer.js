@@ -34,13 +34,11 @@ class AIAnalyzer {
     }
 
     /**
-     * Configurar API key
+     * Configurar API key (solo en memoria, NO en localStorage por seguridad)
      */
     setAPIKey(apiKey) {
         this.apiKey = apiKey;
-        // Almacenar con simple obfuscación (NO es encriptación real)
-        const obfuscated = btoa(apiKey);
-        localStorage.setItem('ai_api_key', obfuscated);
+        // NO guardamos en localStorage por seguridad
     }
 
     /**
@@ -51,16 +49,11 @@ class AIAnalyzer {
     }
 
     /**
-     * Cargar API key desde localStorage
+     * Cargar API key desde localStorage - DEPRECADO por seguridad
+     * Ahora siempre retorna null, requiere ingresar key cada vez
      */
     loadAPIKey() {
-        const obfuscated = localStorage.getItem('ai_api_key');
-        if (!obfuscated) return null;
-        try {
-            return atob(obfuscated);
-        } catch (e) {
-            return null;
-        }
+        return null; // Por seguridad, no guardamos API keys
     }
 
     /**
@@ -121,52 +114,51 @@ class AIAnalyzer {
     generateDDVEDVPrompt(script1, script2, script1Name, script2Name) {
         return `Eres un experto en análisis de código PySpark para conversiones DDV→EDV en entornos Databricks del Banco de Crédito del Perú (BCP).
 
-# CONTEXTO
+# OBJETIVO DEL ANÁLISIS DDV vs EDV
 
-Estás comparando dos scripts PySpark:
-- **Script 1 (${script1Name})**: Puede ser DDV o EDV
-- **Script 2 (${script2Name})**: Puede ser DDV o EDV
+Queremos validar si ambos scripts son **equivalentes en estructura, lógica y datos generados**, entendiendo que EDV introduce:
+- **Managed tables** (esquemas separados DDV/EDV)
+- **Parámetros EDV** (PRM_CATALOG_NAME_EDV, PRM_ESQUEMA_TABLA_EDV, PRM_ESQUEMA_TABLA_ESCRITURA)
+- **Optimizaciones de rendimiento** que NO afectan la lógica de negocio
 
-# DIFERENCIAS ESPERADAS DDV→EDV (NO SON ERRORES):
+## LO QUE DEBE SER IGUAL (CRÍTICO):
 
-1. **Separación de Esquemas**:
-   - DDV: Lee y escribe en el mismo schema (bcp_ddv_*)
-   - EDV: Lee de views DDV (bcp_ddv_*_v), escribe en schema EDV (bcp_edv_*)
+1. **Estructura de datos**: Mismas tablas de entrada/salida, mismas columnas calculadas
+2. **Lógica de negocio**: Mismas transformaciones, joins, agregaciones, filtros
+3. **Datos generados**: El resultado final debe ser idéntico (excepto diferencias de rendimiento/infraestructura)
 
-2. **Variables Adicionales EDV**:
-   - PRM_CATALOG_NAME_EDV
-   - PRM_ESQUEMA_TABLA_EDV
-   - PRM_ESQUEMA_TABLA_ESCRITURA
+## LO QUE PUEDE SER DIFERENTE (ESPERADO EN EDV):
 
-3. **Widgets Adicionales EDV**:
-   - dbutils.widgets para catalog y schema EDV
+1. **Separación de esquemas**:
+   - DDV: Lee/escribe en bcp_ddv_*
+   - EDV: Lee de bcp_ddv_*_v (views), escribe en bcp_edv_*
 
-4. **Optimizaciones de Rendimiento (6 optimizaciones conocidas)**:
-   - **Cache en memoria**: DDV usa write/read a disco, EDV usa .cache() + .count()
-   - **Consolidación de loops**: DDV usa 3 .select separados, EDV consolida en 1
-   - **Storage Level**: DDV usa MEMORY_ONLY_2, EDV usa MEMORY_AND_DISK
-   - **Spark AQE**: EDV agrega configuraciones de Adaptive Query Execution
-   - **Eliminación de coalesce**: EDV elimina coalesce(160) en loops
-   - **Repartition pre-escritura**: EDV agrega repartition antes de write_delta
+2. **Variables/Widgets adicionales EDV**:
+   - PRM_CATALOG_NAME_EDV, PRM_ESQUEMA_TABLA_EDV, PRM_ESQUEMA_TABLA_ESCRITURA
+   - dbutils.widgets para parámetros EDV
 
-# DIFERENCIAS CRÍTICAS (ERRORES REALES):
+3. **Optimizaciones de rendimiento** (NO afectan lógica):
+   - Cache en memoria (.cache() vs write/read a disco)
+   - Consolidación de loops
+   - Storage Level (MEMORY_AND_DISK vs MEMORY_ONLY_2)
+   - Spark AQE, coalesce, repartition
 
-1. **Lógica de negocio diferente** (funciones, transformaciones, joins)
-2. **Cambios en campos calculados** (withColumn con lógica distinta)
-3. **Agregaciones diferentes** (groupBy, agg)
-4. **Tablas de entrada/salida diferentes** (excepto separación DDV/EDV esperada)
-5. **Eliminación de funciones críticas**
-6. **Cambios en trim()** que afecten deduplicación
+## ERRORES CRÍTICOS (REPORTAR COMO CRITICAL):
 
-# TAREA
+1. **Lógica de negocio diferente**: withColumn, when/otherwise, UDFs, funciones diferentes
+2. **Cambios en agregaciones**: groupBy, agg, window functions diferentes
+3. **Joins diferentes**: Columnas de join, tipos de join (inner/left/outer) diferentes
+4. **Transformaciones de datos diferentes**: cast, trim (si afectan lógica), rename diferentes
+5. **Tablas de entrada/salida diferentes** (excepto separación DDV/EDV)
 
-Analiza ambos scripts y proporciona un reporte en formato JSON con esta estructura:
+# FORMATO DE RESPUESTA
 
-\`\`\`json
+Responde ÚNICAMENTE con JSON válido (sin bloques de código markdown):
+
 {
   "summary": {
     "is_valid_conversion": true/false,
-    "conversion_type": "DDV→EDV" | "EDV→DDV" | "Same Type" | "Unknown",
+    "conversion_type": "DDV→EDV" | "EDV→DDV" | "Same Type",
     "similarity_percentage": 0-100,
     "total_differences": number,
     "critical_issues": number,
@@ -174,43 +166,35 @@ Analiza ambos scripts y proporciona un reporte en formato JSON con esta estructu
   },
   "differences": [
     {
-      "category": "SCHEMA_CHANGE" | "OPTIMIZATION" | "LOGIC_CHANGE" | "VARIABLE_CHANGE" | ...,
-      "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO",
-      "description": "Descripción breve del cambio",
-      "details": "Detalles completos con ejemplos de código",
-      "recommendation": "Qué hacer con este cambio",
+      "category": "SCHEMA" | "OPTIMIZATION" | "LOGIC" | "VARIABLES",
+      "severity": "CRITICAL" | "INFO",
+      "description": "Descripción breve",
+      "details": "Detalles completos",
+      "recommendation": "Qué hacer",
       "is_expected_ddv_edv": true/false
     }
   ],
   "optimizations": [
     {
-      "name": "Cache en Memoria",
-      "impact": "60-80% más rápido",
+      "name": "Nombre optimización",
+      "impact": "Impacto estimado",
       "detected": true/false,
-      "details": "..."
+      "details": "Detalles"
     }
   ],
-  "recommendations": [
-    "Recomendación 1",
-    "Recomendación 2"
-  ],
-  "conclusion": "Conclusión general del análisis"
+  "recommendations": ["Recomendación 1", "Recomendación 2"],
+  "conclusion": "Conclusión general"
 }
-\`\`\`
 
 # SCRIPTS A ANALIZAR
 
 ## Script 1 (${script1Name}):
-\`\`\`python
 ${script1}
-\`\`\`
 
 ## Script 2 (${script2Name}):
-\`\`\`python
 ${script2}
-\`\`\`
 
-Proporciona el análisis completo en formato JSON válido.`;
+IMPORTANTE: Responde solo con JSON, sin bloques de código markdown.`;
     }
 
     /**
@@ -219,25 +203,57 @@ Proporciona el análisis completo en formato JSON válido.`;
     generateIndividualPrompt(script1, script2, script1Name, script2Name) {
         return `Eres un experto en análisis de código PySpark para entornos Databricks.
 
-# TAREA
+# OBJETIVO DEL ANÁLISIS DE SCRIPTS INDIVIDUALES
 
-Compara estos dos scripts PySpark y proporciona un análisis detallado de sus diferencias.
+Queremos un **análisis profundo e integral** para determinar si estos dos scripts son equivalentes en:
 
-**Script 1 (${script1Name})**:
-\`\`\`python
-${script1}
-\`\`\`
+1. **ESTRUCTURA**: Misma arquitectura de funciones, flujo del programa, organización del código
+2. **LÓGICA**: Mismas transformaciones, filtros, joins, agregaciones, cálculos
+3. **DATOS**: Mismas tablas de entrada/salida, mismas columnas generadas, mismo resultado final
 
-**Script 2 (${script2Name})**:
-\`\`\`python
-${script2}
-\`\`\`
+## QUÉ ANALIZAR A FONDO:
 
-# ANÁLISIS REQUERIDO
+### 1. Imports y Dependencias
+- ¿Usan las mismas librerías?
+- ¿Faltan o sobran imports?
+- ¿Imports diferentes implican lógica diferente?
 
-Proporciona un reporte en formato JSON con esta estructura:
+### 2. Configuraciones Spark
+- ¿Configuraciones de Spark idénticas o diferentes?
+- ¿Diferencias en shuffle partitions, memoria, cache?
+- ¿Impactan en el resultado o solo en rendimiento?
 
-\`\`\`json
+### 3. Lógica de Negocio (CRÍTICO)
+- ¿withColumn con la misma lógica?
+- ¿when/otherwise iguales o diferentes?
+- ¿Funciones aplicadas (trim, cast, round, etc.) iguales?
+- ¿Agregaciones (groupBy, agg, window) idénticas?
+- ¿Joins con mismas columnas y tipo?
+
+### 4. Flujo de Datos
+- ¿Mismas tablas de entrada?
+- ¿Misma secuencia de transformaciones?
+- ¿Mismas tablas de salida?
+- ¿Mismas columnas finales?
+
+### 5. Calidad de Datos
+- ¿Filtros iguales?
+- ¿Manejo de nulos igual?
+- ¿Deduplicación igual?
+- ¿Validaciones iguales?
+
+## SEVERIDADES:
+
+- **CRITICAL**: Diferencias que generan datos distintos (lógica, joins, agregaciones)
+- **HIGH**: Diferencias que pueden afectar el resultado (filtros, transformaciones)
+- **MEDIUM**: Diferencias estructurales importantes (funciones, organización)
+- **LOW**: Diferencias menores (nombres de variables, comentarios)
+- **INFO**: Diferencias solo de rendimiento/optimización
+
+# FORMATO DE RESPUESTA
+
+Responde ÚNICAMENTE con JSON válido (sin bloques de código markdown):
+
 {
   "summary": {
     "similarity_percentage": 0-100,
@@ -247,7 +263,7 @@ Proporciona un reporte en formato JSON con esta estructura:
   },
   "differences": [
     {
-      "category": "IMPORTS" | "FUNCTIONS" | "TRANSFORMATIONS" | "DATA_FLOW" | ...,
+      "category": "IMPORTS" | "CONFIG" | "LOGIC" | "JOINS" | "AGGREGATIONS" | "TRANSFORMATIONS" | "FILTERS" | "OUTPUT",
       "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO",
       "location": "Ubicación en el código",
       "description": "Descripción del cambio",
@@ -261,11 +277,18 @@ Proporciona un reporte en formato JSON con esta estructura:
   "recommendations": [
     "Recomendaciones finales"
   ],
-  "conclusion": "Conclusión general"
+  "conclusion": "Conclusión general sobre equivalencia"
 }
-\`\`\`
 
-Proporciona el análisis completo en formato JSON válido.`;
+# SCRIPTS A ANALIZAR
+
+## Script 1 (${script1Name}):
+${script1}
+
+## Script 2 (${script2Name}):
+${script2}
+
+IMPORTANTE: Responde solo con JSON, sin bloques de código markdown.`;
     }
 
     /**
@@ -370,13 +393,41 @@ Proporciona el análisis completo en formato JSON válido.`;
      */
     parseAIResponse(responseText, mode) {
         try {
-            // Extraer JSON de la respuesta (puede venir dentro de ```json ... ```)
-            const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
-            const jsonText = jsonMatch ? jsonMatch[1] : responseText;
+            // Intentar múltiples métodos de extracción JSON
+            let jsonText = responseText;
+
+            // Método 1: Extraer de bloques de código markdown ```json ... ```
+            let jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonText = jsonMatch[1];
+            } else {
+                // Método 2: Extraer de bloques de código sin lenguaje ``` ... ```
+                jsonMatch = responseText.match(/```\s*([\s\S]*?)\s*```/);
+                if (jsonMatch) {
+                    jsonText = jsonMatch[1];
+                }
+            }
+
+            // Método 3: Limpiar texto antes de parsear
+            jsonText = jsonText.trim();
+
+            // Eliminar posibles prefijos antes del JSON
+            const jsonStart = jsonText.indexOf('{');
+            if (jsonStart > 0) {
+                jsonText = jsonText.substring(jsonStart);
+            }
+
+            // Eliminar posibles sufijos después del JSON
+            const jsonEnd = jsonText.lastIndexOf('}');
+            if (jsonEnd > 0 && jsonEnd < jsonText.length - 1) {
+                jsonText = jsonText.substring(0, jsonEnd + 1);
+            }
 
             return JSON.parse(jsonText);
         } catch (e) {
             console.error('[AIAnalyzer] Error parsing JSON:', e);
+            console.error('[AIAnalyzer] Response text:', responseText);
+
             // Retornar formato básico con la respuesta en texto plano
             return {
                 summary: {
@@ -397,7 +448,7 @@ Proporciona el análisis completo en formato JSON válido.`;
     clearConfig() {
         this.apiKey = null;
         this.provider = null;
-        localStorage.removeItem('ai_api_key');
+        // Solo limpiamos provider, API key ya no se guarda
         localStorage.removeItem('ai_provider');
     }
 }

@@ -89,7 +89,7 @@ function openAIConfigModal() {
     const modal = document.getElementById('ai-config-modal');
     if (!modal) return;
 
-    // Cargar configuración actual
+    // Cargar configuración actual (solo provider, NO API key por seguridad)
     const providerSelect = document.getElementById('ai-provider');
     const apiKeyInput = document.getElementById('ai-api-key');
 
@@ -97,8 +97,10 @@ function openAIConfigModal() {
         providerSelect.value = aiAnalyzer.provider;
     }
 
-    if (apiKeyInput && aiAnalyzer.apiKey) {
-        apiKeyInput.value = aiAnalyzer.apiKey;
+    // NO cargar API key por seguridad - siempre limpio
+    if (apiKeyInput) {
+        apiKeyInput.value = '';
+        apiKeyInput.placeholder = 'Ingresa tu API key...';
     }
 
     modal.classList.add('active');
