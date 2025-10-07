@@ -138,68 +138,67 @@
     word-wrap: break-word;
 }
 
-/* Line Same - VERDE para líneas idénticas/similares */
+/* Line Same - Sin color de fondo para líneas iguales */
 .line-same {
-    background: rgba(22, 82, 44, 0.25); /* Verde más visible para similares */
+    background: transparent; /* Sin fondo para líneas iguales */
     cursor: pointer;
     transition: background 0.1s;
-    border-left: 3px solid #587c0c;
 }
 
 .line-same:hover {
-    background: rgba(22, 82, 44, 0.35);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .line-same .line-marker {
-    color: #89d185;
-    content: '='; /* Mostrar = para líneas iguales */
+    color: #858585; /* Gris neutral */
 }
 
 .line-same .line-number {
-    color: #89d185;
-    background: rgba(22, 82, 44, 0.15);
+    color: #858585;
 }
 
-/* Line Added - Gris claro (solo existe en un lado) */
+/* Line Added - VERDE VISIBLE para líneas agregadas */
 .line-added {
-    background: rgba(100, 100, 100, 0.15); /* Gris muy sutil */
-    border-left: 3px solid #666;
+    background: rgba(16, 185, 129, 0.15); /* Verde visible */
+    border-left: 3px solid #10b981;
     cursor: pointer;
     transition: background 0.1s;
 }
 
 .line-added:hover {
-    background: rgba(100, 100, 100, 0.25);
+    background: rgba(16, 185, 129, 0.25);
 }
 
 .line-added .line-marker {
-    color: #999;
+    color: #10b981;
+    font-weight: bold;
 }
 
 .line-added .line-number {
-    color: #999;
-    background: rgba(100, 100, 100, 0.1);
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
 }
 
-/* Line Removed - Gris claro (solo existe en un lado) */
+/* Line Removed - ROJO VISIBLE para líneas removidas */
 .line-removed {
-    background: rgba(100, 100, 100, 0.15); /* Gris muy sutil */
-    border-left: 3px solid #666;
+    background: rgba(239, 68, 68, 0.15); /* Rojo visible */
+    border-left: 3px solid #ef4444;
     cursor: pointer;
     transition: background 0.1s;
 }
 
 .line-removed:hover {
-    background: rgba(100, 100, 100, 0.25);
+    background: rgba(239, 68, 68, 0.25);
 }
 
 .line-removed .line-marker {
-    color: #999;
+    color: #ef4444;
+    font-weight: bold;
 }
 
 .line-removed .line-number {
-    color: #999;
-    background: rgba(100, 100, 100, 0.1);
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
 }
 
 /* Highlighted Line - When clicked - COLOR DISTINTO PARA SELECCIÓN */
