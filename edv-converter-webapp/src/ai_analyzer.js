@@ -16,12 +16,12 @@ class AIAnalyzer {
         this.endpoints = {
             openai: 'https://api.openai.com/v1/chat/completions',
             claude: 'https://api.anthropic.com/v1/messages',
-            gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+            gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent'
         };
         this.models = {
             openai: 'gpt-5-chat-latest',
             claude: 'claude-3-5-sonnet-20241022',
-            gemini: 'gemini-pro'
+            gemini: 'gemini-2.5-pro'
         };
     }
 
